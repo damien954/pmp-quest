@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#8549ba">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PMP Quest">
+<meta name="description" content="PMP exam prep with spaced repetition and domain analytics">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>PMP Quest</title>
+<style>
+  :root {
+    --purple: #8549ba;
+    --purple-light: #f0e6ff;
+    --purple-dark: #5a2d82;
+    --green: #58cc02;
+    --green-light: #f0ffe0;
+    --green-dark: #2d6e00;
+    --red: #ff4b4b;
+    --red-light: #fff0f0;
+    --red-dark: #8b0000;
+    --amber: #e07000;
+    --amber-light: #faeeda;
+    --teal: #1D9E75;
+    --bg: #ffffff;
+    --bg2: #f7f7f5;
+    --bg3: #f0efe8;
+    --text: #1a1a1a;
+    --text2: #6b6b6b;
+    --text3: #9b9b9b;
+    --border: rgba(0,0,0,0.12);
+    --border2: rgba(0,0,0,0.22);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a1a;
+      --bg2: #252525;
+      --bg3: #2f2f2f;
+      --text: #f0f0f0;
+      --text2: #aaaaaa;
+      --text3: #707070;
+      --border: rgba(255,255,255,0.12);
+      --border2: rgba(255,255,255,0.22);
+      --purple-light: #2d1f45;
+      --green-light: #1a2e10;
+      --red-light: #2e1010;
+      --amber-light: #2e2010;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overscroll-behavior: none;
+  }
+  #app {
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: calc(var(--safe-top) + 16px) 16px calc(var(--safe-bottom) + 80px);
+    -webkit-overflow-scrolling: touch;
+  }
+  /* ── HEADER ── */
+  .hdr { display:flex; align-items:center; justify-content:space-between; padding:.25rem 0 1rem; gap:10px; }
+  .pill { display:flex; align-items:center; gap:5px; font-size:13px; font-weight:600; color:var(--text2); }
+  .pill .v { font-size:14px; color:var(--text); }
+  /* ── PROGRESS ── */
+  .pbar-w { background:var(--bg2); border-radius:99px; height:8px; margin-bottom:1.25rem; overflow:hidden; }
+  .pbar { height:8px; border-radius:99px; background:var(--purple); transition:width .4s ease; }
+  /* ── CARDS ── */
+  .card { background:var(--bg); border:0.5px solid var(--border); border-radius:var(--radius); padding:1.125rem 1.25rem; margin-bottom:.875rem; }
+  .qtag { font-size:11px; font-weight:600; color:var(--purple); background:var(--purple-light); border-radius:6px; padding:3px 10px; display:inline-block; margin-bottom:6px; }
+  .sr-tag { font-size:11px; font-weight:600; border-radius:6px; padding:3px 10px; display:inline-block; margin-bottom:6px; margin-left:5px; }
+  .sr-new { background:#e6f0ff; color:#0a3f8f; }
+  .sr-review { background:var(--amber-light); color:#5a3000; }
+  .sr-hard { background:var(--red-light); color:var(--red-dark); }
+  .sr-mastered { background:var(--green-light); color:var(--green-dark); }
+  .qtext { font-size:16px; line-height:1.55; color:var(--text); font-weight:500; }
+  /* ── OPTIONS ── */
+  .opts { display:grid; gap:9px; margin-bottom:.875rem; }
+  .opt {
+    background:var(--bg);
+    border:1.5px solid var(--border2);
+    border-radius:var(--radius);
+    padding:13px 14px;
+    text-align:left;
+    font-size:15px;
+    color:var(--text);
+    cursor:pointer;
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    width:100%;
+    transition:border-color .12s, background .12s, transform .08s;
+    -webkit-appearance:none;
+  }
+  .opt:active:not(:disabled) { transform:scale(0.98); }
+  .opt.sel { border-color:var(--purple); background:var(--purple-light); color:var(--purple-dark); font-weight:500; }
+  .opt.cor { border-color:var(--green); background:var(--green-light); color:var(--green-dark); }
+  .opt.inc { border-color:var(--red); background:var(--red-light); color:var(--red-dark); }
+  .opt:disabled { cursor:default; }
+  .oltr { font-size:12px; font-weight:600; background:var(--bg2); border-radius:6px; width:24px; height:24px; min-width:24px; display:flex; align-items:center; justify-content:center; margin-top:1px; }
+  .opt.sel .oltr { background:#dcc8f7; color:var(--purple-dark); }
+  .opt.cor .oltr { background:#c6f0a0; color:var(--green-dark); }
+  .opt.inc .oltr { background:#ffc5c5; color:var(--red-dark); }
+  /* ── FEEDBACK ── */
+  .fb { border-radius:var(--radius); padding:.875rem 1rem; margin-bottom:.875rem; font-size:14px; line-height:1.55; }
+  .fb.cor { background:var(--green-light); border:1px solid var(--green); color:var(--green-dark); }
+  .fb.inc { background:var(--red-light); border:1px solid var(--red); color:var(--red-dark); }
+  .fb-hd { font-weight:600; font-size:15px; margin-bottom:4px; }
+  /* ── BUTTONS ── */
+  .abtn { width:100%; padding:15px; border-radius:var(--radius); font-size:16px; font-weight:600; border:none; cursor:pointer; transition:opacity .15s, transform .1s; letter-spacing:.01em; }
+  .abtn:active { transform:scale(.98); }
+  .abtn.pur { background:var(--purple); color:white; }
+  .abtn.grn { background:var(--green); color:white; }
+  .abtn.red { background:var(--red); color:white; }
+  .abtn.out { background:transparent; border:1.5px solid var(--border2); color:var(--text); }
+  .abtn:disabled { background:var(--bg2); color:var(--text3); cursor:default; }
+  .btn-row { display:grid; gap:9px; }
+  /* ── TIMER / ERROR ── */
+  .tmr { display:flex; align-items:center; gap:6px; font-size:15px; font-weight:600; color:var(--text); }
+  .tmr.warn { color:var(--amber); }
+  .tmr.dng { color:var(--red); animation:pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+  .ebar { background:var(--red-light); border:1px solid var(--red); border-radius:var(--radius-sm); padding:8px 12px; font-size:13px; color:var(--red-dark); display:flex; align-items:center; justify-content:space-between; margin-bottom:.875rem; }
+  .dots { display:flex; gap:3px; flex-wrap:wrap; }
+  .dot { width:11px; height:11px; border-radius:50%; background:var(--bg2); border:1px solid var(--border); }
+  .dot.w { background:var(--red); border-color:var(--red); }
+  /* ── HOME ── */
+  .hero { text-align:center; padding:1.25rem 0 1rem; }
+  .hero-icon { font-size:60px; line-height:1; }
+  .hero h1 { font-size:24px; font-weight:700; margin:.5rem 0 .25rem; }
+  .hero p { color:var(--text2); font-size:14px; }
+  .hero-pills { display:flex; gap:16px; justify-content:center; margin-top:.75rem; font-size:13px; color:var(--text2); font-weight:500; }
+  .sr-overview { background:var(--bg2); border-radius:var(--radius); padding:1rem 1.25rem; margin-bottom:1rem; }
+  .sr-overview-title { font-size:13px; font-weight:600; color:var(--text); margin-bottom:.625rem; }
+  .sr-stat-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .sr-stat { text-align:center; }
+  .sr-stat .v { font-size:20px; font-weight:700; color:var(--text); }
+  .sr-stat .l { font-size:11px; color:var(--text2); margin-top:2px; }
+  .mode-list { display:grid; gap:9px; }
+  .mc { background:var(--bg); border:.5px solid var(--border); border-radius:var(--radius); padding:1rem 1.125rem; display:flex; align-items:center; gap:12px; cursor:pointer; transition:border-color .15s, background .1s; -webkit-appearance:none; }
+  .mc:active { background:var(--bg2); }
+  .mi { width:46px; height:46px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+  .mt { font-weight:600; font-size:15px; color:var(--text); }
+  .ms { font-size:12px; color:var(--text2); margin-top:2px; line-height:1.4; }
+  .bdg { font-size:11px; font-weight:600; border-radius:99px; padding:2px 8px; margin-left:5px; }
+  .bdg-p { background:var(--purple-light); color:var(--purple-dark); }
+  .bdg-r { background:var(--red-light); color:var(--red-dark); }
+  .bdg-a { background:var(--amber-light); color:#5a3000; }
+  .info-box { background:var(--bg2); border-radius:var(--radius); padding:.875rem 1.125rem; margin-top:.875rem; font-size:13px; color:var(--text2); line-height:1.7; }
+  /* ── RESULTS ── */
+  .result-screen { text-align:center; padding:.5rem 0; }
+  .ri { font-size:60px; margin-bottom:.625rem; }
+  .rt { font-size:24px; font-weight:700; margin-bottom:.3rem; }
+  .rs { font-size:14px; color:var(--text2); margin-bottom:1.25rem; line-height:1.5; }
+  .srow { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:1.125rem; }
+  .sc { background:var(--bg2); border-radius:var(--radius-sm); padding:.875rem; text-align:center; }
+  .sc .sv { font-size:22px; font-weight:700; color:var(--text); }
+  .sc .sl { font-size:11px; color:var(--text2); margin-top:2px; }
+  /* ── DOMAIN BARS ── */
+  .radar-wrap { text-align:left; margin-bottom:1.25rem; }
+  .radar-title { font-size:13px; font-weight:600; color:var(--text2); margin-bottom:.625rem; }
+  .domain-bars { display:grid; gap:9px; }
+  .db-row { display:grid; grid-template-columns:90px 1fr 38px; align-items:center; gap:8px; font-size:13px; }
+  .db-label { color:var(--text2); text-align:right; font-size:12px; }
+  .db-track { background:var(--bg2); border-radius:99px; height:12px; overflow:hidden; }
+  .db-fill { height:12px; border-radius:99px; transition:width .7s ease; }
+  .db-pct { color:var(--text); font-weight:600; font-size:12px; }
+  /* ── REVIEW ── */
+  .rev-section { text-align:left; margin-bottom:1.25rem; }
+  .rev-hd { font-size:13px; font-weight:600; color:var(--text2); margin-bottom:.625rem; }
+  .rev-item { background:var(--bg2); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:7px; font-size:13px; }
+  .rq { font-weight:600; color:var(--text); margin-bottom:4px; line-height:1.4; }
+  .ra { color:var(--green-dark); margin-bottom:2px; }
+  .ry { color:var(--red-dark); margin-bottom:2px; }
+  .rexp { color:var(--text2); font-size:12px; margin-top:4px; line-height:1.5; }
+  /* ── TOAST ── */
+  .toast { position:fixed; top:calc(var(--safe-top) + 12px); right:12px; background:#ffd900; color:#6b4f00; border-radius:99px; padding:7px 16px; font-weight:700; font-size:13px; animation:pop .35s ease; pointer-events:none; z-index:9999; }
+  @keyframes pop { 0%{transform:scale(.4);opacity:0} 70%{transform:scale(1.12)} 100%{transform:scale(1);opacity:1} }
+  /* ── RADAR CHART ── */
+  .radar-chart-wrap { position:relative; width:100%; height:240px; margin-bottom:.5rem; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const ALL_Q = [
+  {id:0,domain:"Predictive",tag:"Initiation",q:"A project manager is assigned to a new project. What should be done FIRST?",opts:["Create the project schedule","Identify stakeholders","Develop the WBS","Define project scope"],ans:1,exp:"Stakeholder identification is critical before any planning — it's one of the first processes in project initiation per PMBOK."},
+  {id:1,domain:"Agile",tag:"Sprint Planning",q:"During sprint planning the team has more work than capacity. What should the Scrum Master do?",opts:["Tell the team to work overtime","Ask the Product Owner to reprioritize","Remove items to match capacity","Extend the sprint duration"],ans:2,exp:"Remove items to match realistic capacity. The sprint timebox is sacred — never force overtime or extend it."},
+  {id:2,domain:"Predictive",tag:"Risk",q:"A risk has 40% probability and $50,000 impact. What is the EMV?",opts:["$50,000","$30,000","$20,000","$10,000"],ans:2,exp:"EMV = 0.40 × $50,000 = $20,000. Used in decision tree analysis and quantitative risk assessment."},
+  {id:3,domain:"Agile",tag:"Retrospective",q:"A team consistently misses sprint goals. What is the BEST Scrum Master action?",opts:["Report team to management","Facilitate a retrospective to find root causes","Add more detailed tasks","Reduce velocity targets"],ans:1,exp:"Retrospectives are the primary Agile improvement tool. Identify systemic issues and help the team self-organize."},
+  {id:4,domain:"Predictive",tag:"Earned Value",q:"BAC=$100k, EV=$40k, AC=$50k. What is the CPI?",opts:["0.80","1.25","0.67","1.50"],ans:0,exp:"CPI = EV/AC = $40k/$50k = 0.80. Below 1.0 means over budget."},
+  {id:5,domain:"Hybrid",tag:"Leadership",q:"A key stakeholder resists an agile transformation. Best approach?",opts:["Ignore concerns","Escalate to sponsor","Actively engage and address concerns","Remove from stakeholder list"],ans:2,exp:"Proactively addressing concerns builds trust and buy-in. Stakeholder engagement is a core PMP competency."},
+  {id:6,domain:"Predictive",tag:"Schedule",q:"Critical path is 30 days. A critical path activity is delayed 5 days. Project end date?",opts:["Same","Delayed 5 days","Depends on float","Delayed up to 5 days"],ans:1,exp:"Critical path activities have zero float. Any delay shifts the end date by the same amount."},
+  {id:7,domain:"Agile",tag:"Kanban",q:"Kanban team sees a bottleneck at Testing. What to do?",opts:["Increase WIP limit for Testing","Decrease WIP limit for Testing","Add more backlog items","Reduce developers"],ans:1,exp:"Decreasing WIP forces the team to swarm the bottleneck before pulling new work — core Kanban principle."},
+  {id:8,domain:"Predictive",tag:"Scope",q:"Customer requests a small out-of-scope change. PM should do FIRST?",opts:["Implement immediately","Reject the change","Submit a change request","Inform the sponsor"],ans:2,exp:"All changes go through Integrated Change Control starting with a formal change request — no matter how small."},
+  {id:9,domain:"Agile",tag:"Definition of Done",q:"Who is responsible for defining the Definition of Done in Scrum?",opts:["Product Owner","Scrum Master","Development Team","Stakeholders"],ans:2,exp:"The Development Team creates and owns the DoD. PO ensures it meets quality needs, but the team defines it."},
+  {id:10,domain:"Predictive",tag:"Communication",q:"A PM has 10 stakeholders. How many communication channels?",opts:["10","45","90","100"],ans:1,exp:"Channels = n(n-1)/2 = 10×9/2 = 45. Essential PMP formula."},
+  {id:11,domain:"Predictive",tag:"Quality",q:"Which quality tool identifies the most common causes of defects?",opts:["Control chart","Pareto diagram","Scatter diagram","Fishbone diagram"],ans:1,exp:"The Pareto diagram (80/20 rule) identifies the vital few causes responsible for most defects."},
+  {id:12,domain:"Agile",tag:"Scrum",q:"A stakeholder wants to add a feature mid-sprint. What happens?",opts:["Add to current sprint","Add to product backlog","Cancel the sprint","Scrum Master decides"],ans:1,exp:"New items go to the Product Backlog and are prioritized by the PO for future sprints. Sprint commitment is protected."},
+  {id:13,domain:"Predictive",tag:"Procurement",q:"Which contract type places the MOST financial risk on the seller?",opts:["Cost Plus Fixed Fee","Time and Materials","Firm Fixed Price","Cost Plus Incentive Fee"],ans:2,exp:"Firm Fixed Price: seller bears all cost overrun risk. Cost exceeds estimate? Seller absorbs the difference."},
+  {id:14,domain:"Predictive",tag:"Integration",q:"PRIMARY purpose of a project charter?",opts:["Define detailed requirements","Formally authorize the project","Allocate the budget","Assign team members"],ans:1,exp:"The charter formally authorizes the project and gives the PM authority to apply resources."},
+  {id:15,domain:"Hybrid",tag:"Metrics",q:"Team velocity declines over several sprints. What to examine FIRST?",opts:["Increase sprint length","Check for impediments in retrospective","Replace team members","Reduce backlog items"],ans:1,exp:"Declining velocity signals systemic impediments. The retrospective is the right forum for root cause analysis."},
+  {id:16,domain:"Predictive",tag:"Risk",q:"Sharing risk with a third party (e.g., insurance) is called:",opts:["Avoid","Mitigate","Transfer","Accept"],ans:2,exp:"Risk Transfer shifts the negative impact to a third party. It reassigns ownership, not eliminates the risk."},
+  {id:17,domain:"Agile",tag:"User Stories",q:"A well-formed user story follows which format?",opts:["As a [role], I want [feature] so that [benefit]","Feature: [name], Description: [detail]","Task: [action], Owner: [name]","Objective: [goal], KPI: [metric]"],ans:0,exp:"The standard user story captures who needs it, what they need, and why — enabling value-driven development."},
+  {id:18,domain:"Predictive",tag:"Earned Value",q:"SPI = 0.75 means the project is:",opts:["25% ahead of schedule","25% behind schedule","75% complete","On schedule"],ans:1,exp:"SPI = EV/PV = 0.75 means you're getting $0.75 of planned work per $1.00 scheduled — 25% behind."},
+  {id:19,domain:"Predictive",tag:"Closing",q:"During project closing, a PM should ensure:",opts:["All risks eliminated","Lessons learned documented","Team is reassigned","Budget surplus returned"],ans:1,exp:"Lessons learned documentation is a critical closing activity that benefits future projects via OPAs."},
+  {id:20,domain:"Agile",tag:"Prioritization",q:"Which backlog prioritization technique considers both value and effort?",opts:["MoSCoW","WSJF","Kano model","Story mapping"],ans:1,exp:"WSJF (Weighted Shortest Job First) divides Cost of Delay by duration. High value + low effort = top priority."},
+  {id:21,domain:"Predictive",tag:"Stakeholders",q:"Stakeholder has HIGH power but LOW interest. Strategy?",opts:["Manage closely","Keep informed","Keep satisfied","Monitor"],ans:2,exp:"High power/Low interest = Keep Satisfied. They have authority but aren't engaged — keep happy to avoid interference."},
+  {id:22,domain:"Hybrid",tag:"Planning",q:"Rolling wave planning means:",opts:["Entire project planned upfront","Near-term in detail; future high-level","Only risks planned in detail","Schedule rolls over weekly"],ans:1,exp:"Rolling wave = progressive elaboration — detail near-term, high-level for future. Common in hybrid/agile."},
+  {id:23,domain:"Predictive",tag:"Quality",q:"Prevention costs are incurred to:",opts:["Fix defects after they occur","Appraise work quality","Avoid defects occurring","Handle customer complaints"],ans:2,exp:"Prevention costs (training, process design, reviews) stop defects before they occur — reducing total Cost of Quality."},
+  {id:24,domain:"Agile",tag:"Scrum",q:"Standard Scrum sprint length?",opts:["1 week","1–4 weeks","1–3 months","Variable, no limit"],ans:1,exp:"Sprints are timeboxed at 1–4 weeks. Most teams use 2-week sprints. The timebox is fixed for the whole project."},
+  {id:25,domain:"Predictive",tag:"Risk",q:"A risk register PRIMARILY contains:",opts:["Project budget details","Identified risks and response plans","Team performance reviews","Stakeholder contacts"],ans:1,exp:"The risk register documents identified risks, probability, impact, owners, and response strategies. It's a living document."},
+  {id:26,domain:"Predictive",tag:"Schedule",q:"Float (slack) is defined as:",opts:["Total project duration","How long an activity can be delayed without delaying the project","Difference between planned and actual cost","Buffer added to estimates"],ans:1,exp:"Float = LS − ES. An activity can slip this much without affecting the project end date. Critical path = zero float."},
+  {id:27,domain:"Hybrid",tag:"Governance",q:"A PMO's PRIMARY role is to:",opts:["Manage individual projects","Standardize governance and provide support","Approve all budgets","Replace the PM"],ans:1,exp:"A PMO standardizes practices, provides templates and training, and offers oversight. It's a center of excellence."},
+  {id:28,domain:"Agile",tag:"Daily Standup",q:"MAIN purpose of the daily standup?",opts:["Report status to management","Identify and remove impediments","Plan the next sprint","Review completed stories"],ans:1,exp:"The daily scrum synchronizes the team and surfaces impediments. It's a team event — not a status report."},
+  {id:29,domain:"Predictive",tag:"Scope",q:"Gold plating refers to:",opts:["Exceeding quality standards","Adding features beyond agreed scope without authorization","Using premium vendors","Padding the budget"],ans:1,exp:"Gold plating = unrequested extras. Even well-intentioned, it's scope creep and wastes resources without approval."},
+  {id:30,domain:"Predictive",tag:"Integration",q:"Configuration management ensures:",opts:["Team performance is tracked","Documents and deliverables are versioned and controlled","Risks are identified early","Stakeholders get timely updates"],ans:1,exp:"Configuration management controls versions of project docs and deliverables — everyone works from the correct version."},
+  {id:31,domain:"Agile",tag:"PI Planning",q:"PI Planning is a key ceremony in which framework?",opts:["Scrum","Kanban","SAFe","XP"],ans:2,exp:"PI Planning is a SAFe event where multiple agile teams align on priorities, dependencies, and goals for 8–12 weeks."},
+  {id:32,domain:"Predictive",tag:"Earned Value",q:"BAC=$200k, CPI=0.80. EAC using current CPI?",opts:["$160,000","$200,000","$250,000","$240,000"],ans:2,exp:"EAC = BAC/CPI = $200k/0.80 = $250,000. Project expected to cost $50k more at current performance rate."},
+  {id:33,domain:"Predictive",tag:"Procurement",q:"A Make-or-Buy analysis helps the PM decide:",opts:["Which vendors to use","Whether to produce internally or outsource","How to structure the contract","When to close the contract"],ans:1,exp:"Make-or-Buy evaluates costs and strategy to determine internal production vs. external procurement."},
+  {id:34,domain:"Agile",tag:"Velocity",q:"Velocity=40 pts/sprint, backlog=200 pts. Sprints needed?",opts:["4","5","6","8"],ans:1,exp:"Sprints = 200/40 = 5. Velocity drives release planning in agile projects."},
+  {id:35,domain:"Hybrid",tag:"Change",q:"PM managing organizational change alongside project. BEST approach?",opts:["Focus only on deliverables","Apply change management alongside delivery","Delegate to HR","Ignore resistance"],ans:1,exp:"Effective PMs integrate change management to address human aspects — building adoption while delivering technically."},
+  {id:36,domain:"Predictive",tag:"Risk",q:"Residual risk is:",opts:["Risk fully eliminated","Risk remaining after implementing a response","Secondary risk caused by a response","An unidentified risk"],ans:1,exp:"Residual risk remains after a response is applied. Monitor it and allocate contingency reserves accordingly."},
+  {id:37,domain:"Agile",tag:"Backlog Refinement",q:"During backlog refinement, the team should:",opts:["Assign tasks to members","Estimate, clarify, and prioritize items","Write the Definition of Done","Conduct the sprint review"],ans:1,exp:"Backlog refinement breaks down, estimates, and orders items to keep them sprint-ready. It's ongoing, not a single event."},
+  {id:38,domain:"Predictive",tag:"Stakeholders",q:"A stakeholder analysis matrix maps stakeholders by:",opts:["Job title and salary","Power/Interest or Power/Influence","Years of experience","Location"],ans:1,exp:"The stakeholder grid maps power vs. interest/influence to determine appropriate engagement strategies."},
+  {id:39,domain:"Predictive",tag:"Schedule",q:"What technique adds time buffers at the end of project phases?",opts:["Fast tracking","Crashing","Critical Chain Method","Resource leveling"],ans:2,exp:"Critical Chain Method adds project and feeding buffers to protect delivery dates from task duration variability."},
+  {id:40,domain:"Agile",tag:"Scrum",q:"Who has final authority over product backlog priorities in Scrum?",opts:["Scrum Master","Development Team","Product Owner","Steering Committee"],ans:2,exp:"The Product Owner owns backlog ordering — balancing business value, stakeholder needs, and risk to maximize ROI."},
+  {id:41,domain:"Predictive",tag:"Quality",q:"Control chart shows data points outside control limits. This indicates:",opts:["Normal process variation","Process is in control","Assignable (special) cause variation","Random variation only"],ans:2,exp:"Points outside control limits signal assignable cause variation — investigate and apply corrective action."},
+  {id:42,domain:"Hybrid",tag:"Metrics",q:"Which metric best indicates sustainable agile team delivery?",opts:["Sprint velocity","Burndown chart","Team happiness index","Consistent velocity over time"],ans:3,exp:"Consistent velocity over multiple sprints = sustainable, predictable pace. Erratic velocity signals instability."},
+  {id:43,domain:"Predictive",tag:"Risk",q:"Contingency reserves are used to address:",opts:["Unknown unknowns","Known unknown risks that have occurred","Management overruns","Scope changes"],ans:1,exp:"Contingency reserves address known unknowns — identified risks that may or may not occur."},
+  {id:44,domain:"Predictive",tag:"Integration",q:"Which document governs how the project is executed, monitored, and controlled?",opts:["Project Charter","Project Management Plan","Scope Statement","Communications Plan"],ans:1,exp:"The Project Management Plan integrates all subsidiary plans and baselines — it's the master governing document."},
+];
+
+const TOTAL_PREP = 45, MAX_WRONG = 14, EXAM_MIN = 60;
+const DOMAINS = ["Predictive","Agile","Hybrid"];
+const DOMAIN_COLORS = {Predictive:"#8549ba", Agile:"#1D9E75", Hybrid:"#BA7517"};
+
+function loadSR(){ try{return JSON.parse(localStorage.getItem('pmp_sr')||'{}')}catch{return{}} }
+function saveSR(sr){ try{localStorage.setItem('pmp_sr',JSON.stringify(sr))}catch{} }
+
+function getSRQueue(sr, count){
+  const now = Date.now();
+  const scored = ALL_Q.map(q=>{
+    const r = sr[q.id]||{interval:0,ef:2.5,due:0,wrong:0};
+    return {q, overdue:now-r.due, isNew:!sr[q.id], wrong:r.wrong||0};
+  });
+  scored.sort((a,b)=>{
+    if(a.isNew!==b.isNew) return a.isNew?1:-1;
+    if(b.wrong!==a.wrong) return b.wrong-a.wrong;
+    return b.overdue-a.overdue;
+  });
+  return scored.slice(0,count).map(s=>s.q);
+}
+
+function updateSR(sr,qid,correct){
+  const r = sr[qid]||{interval:0,ef:2.5,due:0,wrong:0};
+  if(correct){
+    r.interval = r.interval===0?1:r.interval===1?3:Math.round(r.interval*r.ef);
+    r.ef = Math.max(1.3, r.ef+0.1);
+    r.due = Date.now()+r.interval*86400000;
+  } else {
+    r.interval=0; r.ef=Math.max(1.3,r.ef-0.2);
+    r.due=Date.now()+3600000; r.wrong=(r.wrong||0)+1;
+  }
+  sr[qid]=r; return sr;
+}
+
+function getSRStats(sr){
+  return {
+    seen: Object.keys(sr).length,
+    mastered: Object.values(sr).filter(r=>r.interval>=7).length,
+    dueNow: Object.entries(sr).filter(([,r])=>r.due<=Date.now()).length
+  };
+}
+
+let radarChart = null;
+let S = {
+  screen:'home', xp:120, streak:5,
+  mode:null, questions:[], current:0, selected:null, answered:false,
+  wrong:0, correct:0, wrongItems:[], domainStats:{},
+  timerSec:EXAM_MIN*60, timerInt:null, startTime:null,
+  failed:false, failReason:null, sr:loadSR()
+};
+
+function shuffle(a){ return [...a].sort(()=>Math.random()-.5); }
+function stopTimer(){ if(S.timerInt){clearInterval(S.timerInt);S.timerInt=null;} }
+function fmt(s){ return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+
+function initDS(qs){
+  const ds={};
+  DOMAINS.forEach(d=>ds[d]={correct:0,total:0});
+  qs.forEach(q=>ds[q.domain]&&ds[q.domain].total++);
+  return ds;
+}
+
+function startPrep(){
+  stopTimer();
+  const qs=shuffle(ALL_Q).slice(0,TOTAL_PREP);
+  S={...S,screen:'quiz',mode:'prep',questions:qs,current:0,selected:null,answered:false,
+    wrong:0,correct:0,wrongItems:[],domainStats:initDS(qs),
+    timerSec:EXAM_MIN*60,failed:false,failReason:null,startTime:Date.now()};
+  S.timerInt=setInterval(()=>{
+    S.timerSec--;
+    if(S.timerSec<=0){stopTimer();S.failed=true;S.failReason='timeout';S.screen='result';}
+    render();
+  },1000);
+  render();
+}
+
+function startSR(){
+  stopTimer();
+  const qs=getSRQueue(S.sr,15);
+  if(!qs.length){showToast('All caught up! Check back later.');return;}
+  S={...S,screen:'quiz',mode:'sr',questions:qs,current:0,selected:null,answered:false,
+    wrong:0,correct:0,wrongItems:[],domainStats:initDS(qs),
+    timerSec:0,failed:false,failReason:null,startTime:Date.now()};
+  render();
+}
+
+function startPractice(){
+  stopTimer();
+  const qs=shuffle(ALL_Q).slice(0,10);
+  S={...S,screen:'quiz',mode:'practice',questions:qs,current:0,selected:null,answered:false,
+    wrong:0,correct:0,wrongItems:[],domainStats:initDS(qs),
+    timerSec:0,failed:false,failReason:null,startTime:Date.now()};
+  render();
+}
+
+function selectOpt(i){ if(S.answered)return; S.selected=i; render(); }
+
+function check(){
+  if(S.selected===null||S.answered)return;
+  S.answered=true;
+  const q=S.questions[S.current];
+  const ok=S.selected===q.ans;
+  if(ok){
+    S.correct++;
+    if(S.domainStats[q.domain]) S.domainStats[q.domain].correct++;
+    if(S.mode!=='practice'){S.xp+=10;showToast('+10 XP');}
+  } else {
+    S.wrong++;
+    S.wrongItems.push({q:q.q,yourAns:q.opts[S.selected],correct:q.opts[q.ans],exp:q.exp,domain:q.domain});
+    if(S.mode==='prep'&&S.wrong>MAX_WRONG){
+      stopTimer();S.failed=true;S.failReason='wrong';
+      S.sr=updateSR(S.sr,q.id,false);saveSR(S.sr);
+      S.screen='result';render();return;
+    }
+  }
+  S.sr=updateSR(S.sr,q.id,ok);saveSR(S.sr);
+  render();
+}
+
+function next(){
+  if(S.current<S.questions.length-1){S.current++;S.selected=null;S.answered=false;render();}
+  else{stopTimer();S.screen='result';render();}
+}
+
+function goHome(){ stopTimer();S.screen='home';render(); }
+
+function showToast(t){
+  const e=document.createElement('div');
+  e.className='toast';e.textContent=t;
+  document.body.appendChild(e);
+  setTimeout(()=>e.remove(),1600);
+}
+
+function getSRLabel(qid){
+  const r=S.sr[qid];
+  if(!r) return '<span class="sr-tag sr-new">New</span>';
+  if(r.wrong>1) return '<span class="sr-tag sr-hard">Hard</span>';
+  if(r.interval>=7) return '<span class="sr-tag sr-mastered">Mastered</span>';
+  return '<span class="sr-tag sr-review">Review</span>';
+}
+
+function drawRadar(ds){
+  const el=document.getElementById('domainChart');
+  if(!el)return;
+  if(radarChart){radarChart.destroy();}
+  const data=DOMAINS.map(d=>ds[d]&&ds[d].total>0?Math.round((ds[d].correct/ds[d].total)*100):0);
+  radarChart=new Chart(el,{
+    type:'radar',
+    data:{
+      labels:DOMAINS,
+      datasets:[{label:'Score %',data,
+        backgroundColor:'rgba(133,73,186,0.18)',
+        borderColor:'#8549ba',borderWidth:2,
+        pointBackgroundColor:'#8549ba',pointRadius:5
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      scales:{r:{min:0,max:100,ticks:{stepSize:25,font:{size:10},color:'#888'},
+        grid:{color:'rgba(128,128,128,0.2)'},
+        pointLabels:{font:{size:13,weight:'600'},color:'#666'}}},
+      plugins:{legend:{display:false}}
+    }
+  });
+}
+
+/* ── RENDER FUNCTIONS ── */
+function renderHome(){
+  const st=getSRStats(S.sr);
+  return `
+<div class="hero">
+  <div class="hero-icon">🦉</div>
+  <h1>PMP Quest</h1>
+  <p>Adaptive prep powered by spaced repetition</p>
+  <div class="hero-pills">
+    <span>🔥 ${S.streak} day streak</span>
+    <span>⭐ ${S.xp} XP</span>
+  </div>
+</div>
+<div class="sr-overview">
+  <div class="sr-overview-title">Your progress</div>
+  <div class="sr-stat-row">
+    <div class="sr-stat"><div class="v">${st.seen}</div><div class="l">Seen</div></div>
+    <div class="sr-stat"><div class="v" style="color:#8549ba">${st.mastered}</div><div class="l">Mastered</div></div>
+    <div class="sr-stat"><div class="v" style="color:#e07000">${st.dueNow}</div><div class="l">Due now</div></div>
+  </div>
+</div>
+<div class="mode-list">
+  <div class="mc" onclick="startSR()">
+    <div class="mi" style="background:#faeeda">🧠</div>
+    <div style="flex:1">
+      <div class="mt">Smart review <span class="bdg bdg-a">Spaced rep</span></div>
+      <div class="ms">15 Qs · weak spots first · adapts to your memory</div>
+    </div>
+    <span style="font-size:13px;color:#aaa">${st.dueNow>0?st.dueNow+' due':st.seen===0?'Start':'Done'} →</span>
+  </div>
+  <div class="mc" onclick="startPrep()">
+    <div class="mi" style="background:#f0e6ff">📝</div>
+    <div style="flex:1">
+      <div class="mt">Prep exam <span class="bdg bdg-r">Hard</span></div>
+      <div class="ms">45 Qs · 60-min · fail if >14 wrong · domain radar</div>
+    </div>
+    <span style="font-size:13px;color:#aaa">→</span>
+  </div>
+  <div class="mc" onclick="startPractice()">
+    <div class="mi" style="background:#f0ffe6">🌱</div>
+    <div style="flex:1">
+      <div class="mt">Practice <span class="bdg bdg-p">Relaxed</span></div>
+      <div class="ms">10 Qs · no timer · explanations every answer</div>
+    </div>
+    <span style="font-size:13px;color:#aaa">→</span>
+  </div>
+</div>
+<div class="info-box">
+  <strong>Spaced repetition:</strong> questions you miss come back sooner.
+  Questions you master are shown less often. All ${ALL_Q.length} questions tracked individually.
+</div>`;
+}
+
+function renderQuiz(){
+  const q=S.questions[S.current];
+  const total=S.questions.length;
+  const pct=(S.current/total)*100;
+  const ltrs=['A','B','C','D'];
+  const isPrep=S.mode==='prep';
+  const tc=S.timerSec<300?'tmr dng':S.timerSec<600?'tmr warn':'tmr';
+
+  const opts=q.opts.map((o,i)=>{
+    let c='opt';
+    if(S.answered){if(i===q.ans)c+=' cor';else if(i===S.selected&&i!==q.ans)c+=' inc';}
+    else if(i===S.selected) c+=' sel';
+    return `<button class="${c}" onclick="selectOpt(${i})" ${S.answered?'disabled':''}><span class="oltr">${ltrs[i]}</span><span style="line-height:1.45;flex:1">${o}</span></button>`;
+  }).join('');
+
+  const fb=S.answered?`<div class="fb ${S.selected===q.ans?'cor':'inc'}"><div class="fb-hd">${S.selected===q.ans?'✓ Correct!':'✗ Incorrect'}</div>${q.exp}</div>`:'';
+  const dots=isPrep?`<div class="ebar"><span style="font-size:12px;font-weight:600">Errors: ${S.wrong}/${MAX_WRONG}</span><div class="dots">${Array.from({length:MAX_WRONG+1},(_,i)=>`<div class="dot${i<S.wrong?' w':''}"></div>`).join('')}</div></div>`:'';
+  const srTag=S.mode==='sr'?getSRLabel(q.id):'';
+  const btnLabel=S.answered?(S.current<total-1?'Next →':'See results'):'Check answer';
+
+  return `
+<div class="hdr">
+  <button onclick="goHome()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text2);padding:4px 6px;line-height:1">✕</button>
+  <div style="flex:1;margin:0 10px"><div class="pbar-w" style="margin-bottom:0"><div class="pbar" style="width:${pct}%"></div></div></div>
+  ${isPrep?`<div class="${tc}">⏱ ${fmt(S.timerSec)}</div>`:`<div class="pill">⭐ <span class="v">${S.xp}</span></div>`}
+</div>
+${dots}
+<div class="card">
+  <div><span class="qtag">${q.domain} · ${q.tag}</span>${srTag}</div>
+  <div style="font-size:12px;color:var(--text3);margin-bottom:8px">Q ${S.current+1} of ${total}</div>
+  <div class="qtext">${q.q}</div>
+</div>
+<div class="opts">${opts}</div>
+${fb}
+<button class="abtn pur" ${!S.answered&&S.selected===null?'disabled':''} onclick="${S.answered?'next()':'check()'}">
+  ${btnLabel}
+</button>`;
+}
+
+function renderResult(){
+  const total=S.questions.length;
+  const pct=Math.round((S.correct/total)*100);
+  const isPrep=S.mode==='prep';
+  const isSR=S.mode==='sr';
+  const elapsed=Math.round((Date.now()-S.startTime)/1000);
+  const timeUsed=isPrep?fmt(EXAM_MIN*60-S.timerSec):fmt(elapsed);
+  const passed=isPrep?!S.failed:pct>=70;
+
+  let icon,title,sub;
+  if(S.failReason==='timeout'){icon='⏰';title='Time\'s up!';sub='You ran out of time. Work on speed.';}
+  else if(S.failReason==='wrong'){icon='❌';title='Exam failed';sub=`Exceeded ${MAX_WRONG} wrong answers. Review below and retry.`;}
+  else if(isPrep&&passed){icon=pct>=85?'🏆':'✅';title='Exam passed!';sub=`${S.correct}/${total} correct, ${S.wrong} errors.`;}
+  else if(isSR){icon='🧠';title='Review done!';sub='Cards updated. Come back tomorrow for the next batch.';}
+  else{icon=pct>=70?'🎉':'📖';title=pct>=70?'Nice work!':'Keep going!';sub=pct>=70?'Good understanding — keep building.':'Review explanations and practice more.';}
+
+  const ds=S.domainStats;
+  const domainBars=DOMAINS.map(d=>{
+    const r=ds[d]||{correct:0,total:0};
+    const p=r.total>0?Math.round((r.correct/r.total)*100):0;
+    return `<div class="db-row">
+      <div class="db-label">${d}</div>
+      <div class="db-track"><div class="db-fill" style="width:${p}%;background:${DOMAIN_COLORS[d]}"></div></div>
+      <div class="db-pct">${p}%</div>
+    </div>`;
+  }).join('');
+
+  const review=S.wrongItems.length>0?`
+<div class="rev-section">
+  <div class="rev-hd">Review: ${S.wrongItems.length} incorrect</div>
+  ${S.wrongItems.map(it=>`<div class="rev-item">
+    <div class="rq">${it.q}</div>
+    <div class="ry">✗ ${it.yourAns}</div>
+    <div class="ra">✓ ${it.correct}</div>
+    <div class="rexp">${it.exp}</div>
+  </div>`).join('')}
+</div>`:`<div style="text-align:center;padding:.75rem;color:var(--green-dark);font-size:14px;margin-bottom:1rem">🎯 No incorrect answers!</div>`;
+
+  setTimeout(()=>drawRadar(ds),200);
+
+  return `
+<div class="result-screen">
+  <div class="ri">${icon}</div>
+  <div class="rt" style="color:${passed?'#2d6e00':'#cc0000'}">${title}</div>
+  <div class="rs">${sub}</div>
+  <div class="srow">
+    <div class="sc"><div class="sv">${S.correct}/${total}</div><div class="sl">Correct</div></div>
+    <div class="sc"><div class="sv" style="color:${S.wrong>MAX_WRONG?'#cc0000':'var(--text)'}">${S.wrong}</div><div class="sl">Wrong${isPrep?' (max '+MAX_WRONG+')':''}</div></div>
+    <div class="sc"><div class="sv">${timeUsed}</div><div class="sl">Time</div></div>
+  </div>
+  <div class="radar-wrap">
+    <div class="radar-title">Domain performance</div>
+    <div class="radar-chart-wrap"><canvas id="domainChart"></canvas></div>
+    <div class="domain-bars" style="margin-top:10px">${domainBars}</div>
+  </div>
+  ${review}
+  <div class="btn-row">
+    ${isPrep?`<button class="abtn ${passed?'grn':'red'}" onclick="startPrep()">${passed?'Take another exam':'Retry exam'}</button>`:''}
+    ${isSR?`<button class="abtn pur" onclick="startSR()">Another round</button>`:''}
+    <button class="abtn out" onclick="goHome()">Back to home</button>
+  </div>
+</div>`;
+}
+
+function render(){
+  const app=document.getElementById('app');
+  if(S.screen==='home') app.innerHTML=renderHome();
+  else if(S.screen==='quiz') app.innerHTML=renderQuiz();
+  else app.innerHTML=renderResult();
+  if(S.screen==='result') setTimeout(()=>drawRadar(S.domainStats),200);
+}
+
+render();
+</script>
+<script>
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('sw.js').catch(()=>{});
+    });
+  }
+</script>
+</body>
+</html>

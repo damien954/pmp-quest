@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PMP Quest – Install Guide</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 680px; margin: 0 auto; padding: 2rem 1.5rem; color: #1a1a1a; line-height: 1.7; }
+  h1 { font-size: 24px; font-weight: 700; margin-bottom: .25rem; color: #8549ba; }
+  h2 { font-size: 17px; font-weight: 600; margin: 2rem 0 .5rem; }
+  .step { display: flex; gap: 14px; margin-bottom: 1.25rem; align-items: flex-start; }
+  .num { background: #8549ba; color: white; border-radius: 50%; width: 30px; height: 30px; min-width: 30px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; margin-top: 2px; }
+  .step-body { flex: 1; }
+  .step-title { font-weight: 600; font-size: 15px; margin-bottom: 3px; }
+  .step-desc { font-size: 14px; color: #555; }
+  code { background: #f0e6ff; color: #5a2d82; padding: 2px 7px; border-radius: 5px; font-size: 13px; }
+  .note { background: #faeeda; border-left: 3px solid #e07000; border-radius: 0 8px 8px 0; padding: .75rem 1rem; font-size: 14px; color: #5a3000; margin: 1.5rem 0; }
+  .feature { display: flex; gap: 10px; margin-bottom: .625rem; font-size: 14px; }
+  .tick { color: #58cc02; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<h1>🦉 PMP Quest</h1>
+<p style="color:#666;margin-bottom:2rem">Install as a home screen app on Android — no app store needed.</p>
+
+<h2>Option A — Use GitHub Pages (recommended, free hosting)</h2>
+
+<div class="step">
+  <div class="num">1</div>
+  <div class="step-body">
+    <div class="step-title">Create a free GitHub account</div>
+    <div class="step-desc">Go to <code>github.com</code> and sign up if you don't have one.</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="num">2</div>
+  <div class="step-body">
+    <div class="step-title">Create a new repository</div>
+    <div class="step-desc">Click <strong>+</strong> → New repository. Name it <code>pmp-quest</code>. Set it to <strong>Public</strong>. Click "Create repository".</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="num">3</div>
+  <div class="step-body">
+    <div class="step-title">Upload the files</div>
+    <div class="step-desc">Click "uploading an existing file". Drag and drop all 4 files:<br>
+    <code>index.html</code> &nbsp; <code>manifest.json</code> &nbsp; <code>sw.js</code> &nbsp; and the <code>icons/</code> folder contents.<br>
+    Commit changes.</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="num">4</div>
+  <div class="step-body">
+    <div class="step-title">Enable GitHub Pages</div>
+    <div class="step-desc">Go to your repo → <strong>Settings</strong> → <strong>Pages</strong> → Source: <strong>main branch</strong> → Save.<br>
+    Your URL will be: <code>yourusername.github.io/pmp-quest</code></div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="num">5</div>
+  <div class="step-body">
+    <div class="step-title">Install on Android</div>
+    <div class="step-desc">Open the URL in <strong>Chrome</strong> on your Android phone. Tap the <strong>3-dot menu</strong> (⋮) → <strong>"Add to Home screen"</strong> → Add. Done!</div>
+  </div>
+</div>
+
+<div class="note">
+  ⚡ Once installed, the app works fully <strong>offline</strong>. Your progress (XP, streaks, spaced repetition data) is saved locally on your phone.
+</div>
+
+<h2>Option B — Local network (no internet hosting)</h2>
+
+<div class="step">
+  <div class="num">1</div>
+  <div class="step-body">
+    <div class="step-title">Install Node.js on your computer</div>
+    <div class="step-desc">Download from <code>nodejs.org</code> (LTS version).</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="num">2</div>
+  <div class="step-body">
+    <div class="step-title">Serve the files</div>
+    <div class="step-desc">Open Terminal in the <code>pmp-pwa</code> folder and run:<br>
+    <code>npx serve . --listen 3000</code></div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="num">3</div>
+  <div class="step-body">
+    <div class="step-title">Open on Android</div>
+    <div class="step-desc">Make sure phone and computer are on same WiFi. Find your computer's local IP (e.g. <code>192.168.1.5</code>) and open <code>http://192.168.1.5:3000</code> in Chrome on your phone. Add to home screen.</div>
+  </div>
+</div>
+
+<h2>What you get</h2>
+<div class="feature"><span class="tick">✓</span> Looks and feels like a native Android app</div>
+<div class="feature"><span class="tick">✓</span> Works completely offline after first load</div>
+<div class="feature"><span class="tick">✓</span> Spaced repetition progress saved locally</div>
+<div class="feature"><span class="tick">✓</span> 45-question prep exam with 60-min timer</div>
+<div class="feature"><span class="tick">✓</span> Domain weakness radar chart after every session</div>
+<div class="feature"><span class="tick">✓</span> No app store, no account, no cost</div>
+
+</body>
+</html>
