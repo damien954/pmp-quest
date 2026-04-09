@@ -1,7 +1,7 @@
 {
   "name": "PMP Quest",
   "short_name": "PMP Quest",
-  "description": "PMP exam prep with spaced repetition and domain analytics",
+  "description": "PMP exam prep with spaced repetition, glossary quiz, scenarios, and domain analytics",
   "start_url": "/index.html",
   "display": "standalone",
   "orientation": "portrait",

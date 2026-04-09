@@ -7,581 +7,801 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="PMP Quest">
-<meta name="description" content="PMP exam prep with spaced repetition and domain analytics">
+<meta name="description" content="PMP exam prep with spaced repetition, glossary, scenarios, and domain analytics">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>PMP Quest</title>
 <style>
-  :root {
-    --purple: #8549ba;
-    --purple-light: #f0e6ff;
-    --purple-dark: #5a2d82;
-    --green: #58cc02;
-    --green-light: #f0ffe0;
-    --green-dark: #2d6e00;
-    --red: #ff4b4b;
-    --red-light: #fff0f0;
-    --red-dark: #8b0000;
-    --amber: #e07000;
-    --amber-light: #faeeda;
-    --teal: #1D9E75;
-    --bg: #ffffff;
-    --bg2: #f7f7f5;
-    --bg3: #f0efe8;
-    --text: #1a1a1a;
-    --text2: #6b6b6b;
-    --text3: #9b9b9b;
-    --border: rgba(0,0,0,0.12);
-    --border2: rgba(0,0,0,0.22);
-    --radius: 12px;
-    --radius-sm: 8px;
-    --safe-top: env(safe-area-inset-top, 0px);
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #1a1a1a;
-      --bg2: #252525;
-      --bg3: #2f2f2f;
-      --text: #f0f0f0;
-      --text2: #aaaaaa;
-      --text3: #707070;
-      --border: rgba(255,255,255,0.12);
-      --border2: rgba(255,255,255,0.22);
-      --purple-light: #2d1f45;
-      --green-light: #1a2e10;
-      --red-light: #2e1010;
-      --amber-light: #2e2010;
-    }
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; overflow: hidden; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    overscroll-behavior: none;
-  }
-  #app {
-    height: 100vh;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: calc(var(--safe-top) + 16px) 16px calc(var(--safe-bottom) + 80px);
-    -webkit-overflow-scrolling: touch;
-  }
-  /* ── HEADER ── */
-  .hdr { display:flex; align-items:center; justify-content:space-between; padding:.25rem 0 1rem; gap:10px; }
-  .pill { display:flex; align-items:center; gap:5px; font-size:13px; font-weight:600; color:var(--text2); }
-  .pill .v { font-size:14px; color:var(--text); }
-  /* ── PROGRESS ── */
-  .pbar-w { background:var(--bg2); border-radius:99px; height:8px; margin-bottom:1.25rem; overflow:hidden; }
-  .pbar { height:8px; border-radius:99px; background:var(--purple); transition:width .4s ease; }
-  /* ── CARDS ── */
-  .card { background:var(--bg); border:0.5px solid var(--border); border-radius:var(--radius); padding:1.125rem 1.25rem; margin-bottom:.875rem; }
-  .qtag { font-size:11px; font-weight:600; color:var(--purple); background:var(--purple-light); border-radius:6px; padding:3px 10px; display:inline-block; margin-bottom:6px; }
-  .sr-tag { font-size:11px; font-weight:600; border-radius:6px; padding:3px 10px; display:inline-block; margin-bottom:6px; margin-left:5px; }
-  .sr-new { background:#e6f0ff; color:#0a3f8f; }
-  .sr-review { background:var(--amber-light); color:#5a3000; }
-  .sr-hard { background:var(--red-light); color:var(--red-dark); }
-  .sr-mastered { background:var(--green-light); color:var(--green-dark); }
-  .qtext { font-size:16px; line-height:1.55; color:var(--text); font-weight:500; }
-  /* ── OPTIONS ── */
-  .opts { display:grid; gap:9px; margin-bottom:.875rem; }
-  .opt {
-    background:var(--bg);
-    border:1.5px solid var(--border2);
-    border-radius:var(--radius);
-    padding:13px 14px;
-    text-align:left;
-    font-size:15px;
-    color:var(--text);
-    cursor:pointer;
-    display:flex;
-    align-items:flex-start;
-    gap:10px;
-    width:100%;
-    transition:border-color .12s, background .12s, transform .08s;
-    -webkit-appearance:none;
-  }
-  .opt:active:not(:disabled) { transform:scale(0.98); }
-  .opt.sel { border-color:var(--purple); background:var(--purple-light); color:var(--purple-dark); font-weight:500; }
-  .opt.cor { border-color:var(--green); background:var(--green-light); color:var(--green-dark); }
-  .opt.inc { border-color:var(--red); background:var(--red-light); color:var(--red-dark); }
-  .opt:disabled { cursor:default; }
-  .oltr { font-size:12px; font-weight:600; background:var(--bg2); border-radius:6px; width:24px; height:24px; min-width:24px; display:flex; align-items:center; justify-content:center; margin-top:1px; }
-  .opt.sel .oltr { background:#dcc8f7; color:var(--purple-dark); }
-  .opt.cor .oltr { background:#c6f0a0; color:var(--green-dark); }
-  .opt.inc .oltr { background:#ffc5c5; color:var(--red-dark); }
-  /* ── FEEDBACK ── */
-  .fb { border-radius:var(--radius); padding:.875rem 1rem; margin-bottom:.875rem; font-size:14px; line-height:1.55; }
-  .fb.cor { background:var(--green-light); border:1px solid var(--green); color:var(--green-dark); }
-  .fb.inc { background:var(--red-light); border:1px solid var(--red); color:var(--red-dark); }
-  .fb-hd { font-weight:600; font-size:15px; margin-bottom:4px; }
-  /* ── BUTTONS ── */
-  .abtn { width:100%; padding:15px; border-radius:var(--radius); font-size:16px; font-weight:600; border:none; cursor:pointer; transition:opacity .15s, transform .1s; letter-spacing:.01em; }
-  .abtn:active { transform:scale(.98); }
-  .abtn.pur { background:var(--purple); color:white; }
-  .abtn.grn { background:var(--green); color:white; }
-  .abtn.red { background:var(--red); color:white; }
-  .abtn.out { background:transparent; border:1.5px solid var(--border2); color:var(--text); }
-  .abtn:disabled { background:var(--bg2); color:var(--text3); cursor:default; }
-  .btn-row { display:grid; gap:9px; }
-  /* ── TIMER / ERROR ── */
-  .tmr { display:flex; align-items:center; gap:6px; font-size:15px; font-weight:600; color:var(--text); }
-  .tmr.warn { color:var(--amber); }
-  .tmr.dng { color:var(--red); animation:pulse 1s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
-  .ebar { background:var(--red-light); border:1px solid var(--red); border-radius:var(--radius-sm); padding:8px 12px; font-size:13px; color:var(--red-dark); display:flex; align-items:center; justify-content:space-between; margin-bottom:.875rem; }
-  .dots { display:flex; gap:3px; flex-wrap:wrap; }
-  .dot { width:11px; height:11px; border-radius:50%; background:var(--bg2); border:1px solid var(--border); }
-  .dot.w { background:var(--red); border-color:var(--red); }
-  /* ── HOME ── */
-  .hero { text-align:center; padding:1.25rem 0 1rem; }
-  .hero-icon { font-size:60px; line-height:1; }
-  .hero h1 { font-size:24px; font-weight:700; margin:.5rem 0 .25rem; }
-  .hero p { color:var(--text2); font-size:14px; }
-  .hero-pills { display:flex; gap:16px; justify-content:center; margin-top:.75rem; font-size:13px; color:var(--text2); font-weight:500; }
-  .sr-overview { background:var(--bg2); border-radius:var(--radius); padding:1rem 1.25rem; margin-bottom:1rem; }
-  .sr-overview-title { font-size:13px; font-weight:600; color:var(--text); margin-bottom:.625rem; }
-  .sr-stat-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-  .sr-stat { text-align:center; }
-  .sr-stat .v { font-size:20px; font-weight:700; color:var(--text); }
-  .sr-stat .l { font-size:11px; color:var(--text2); margin-top:2px; }
-  .mode-list { display:grid; gap:9px; }
-  .mc { background:var(--bg); border:.5px solid var(--border); border-radius:var(--radius); padding:1rem 1.125rem; display:flex; align-items:center; gap:12px; cursor:pointer; transition:border-color .15s, background .1s; -webkit-appearance:none; }
-  .mc:active { background:var(--bg2); }
-  .mi { width:46px; height:46px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
-  .mt { font-weight:600; font-size:15px; color:var(--text); }
-  .ms { font-size:12px; color:var(--text2); margin-top:2px; line-height:1.4; }
-  .bdg { font-size:11px; font-weight:600; border-radius:99px; padding:2px 8px; margin-left:5px; }
-  .bdg-p { background:var(--purple-light); color:var(--purple-dark); }
-  .bdg-r { background:var(--red-light); color:var(--red-dark); }
-  .bdg-a { background:var(--amber-light); color:#5a3000; }
-  .info-box { background:var(--bg2); border-radius:var(--radius); padding:.875rem 1.125rem; margin-top:.875rem; font-size:13px; color:var(--text2); line-height:1.7; }
-  /* ── RESULTS ── */
-  .result-screen { text-align:center; padding:.5rem 0; }
-  .ri { font-size:60px; margin-bottom:.625rem; }
-  .rt { font-size:24px; font-weight:700; margin-bottom:.3rem; }
-  .rs { font-size:14px; color:var(--text2); margin-bottom:1.25rem; line-height:1.5; }
-  .srow { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:1.125rem; }
-  .sc { background:var(--bg2); border-radius:var(--radius-sm); padding:.875rem; text-align:center; }
-  .sc .sv { font-size:22px; font-weight:700; color:var(--text); }
-  .sc .sl { font-size:11px; color:var(--text2); margin-top:2px; }
-  /* ── DOMAIN BARS ── */
-  .radar-wrap { text-align:left; margin-bottom:1.25rem; }
-  .radar-title { font-size:13px; font-weight:600; color:var(--text2); margin-bottom:.625rem; }
-  .domain-bars { display:grid; gap:9px; }
-  .db-row { display:grid; grid-template-columns:90px 1fr 38px; align-items:center; gap:8px; font-size:13px; }
-  .db-label { color:var(--text2); text-align:right; font-size:12px; }
-  .db-track { background:var(--bg2); border-radius:99px; height:12px; overflow:hidden; }
-  .db-fill { height:12px; border-radius:99px; transition:width .7s ease; }
-  .db-pct { color:var(--text); font-weight:600; font-size:12px; }
-  /* ── REVIEW ── */
-  .rev-section { text-align:left; margin-bottom:1.25rem; }
-  .rev-hd { font-size:13px; font-weight:600; color:var(--text2); margin-bottom:.625rem; }
-  .rev-item { background:var(--bg2); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:7px; font-size:13px; }
-  .rq { font-weight:600; color:var(--text); margin-bottom:4px; line-height:1.4; }
-  .ra { color:var(--green-dark); margin-bottom:2px; }
-  .ry { color:var(--red-dark); margin-bottom:2px; }
-  .rexp { color:var(--text2); font-size:12px; margin-top:4px; line-height:1.5; }
-  /* ── TOAST ── */
-  .toast { position:fixed; top:calc(var(--safe-top) + 12px); right:12px; background:#ffd900; color:#6b4f00; border-radius:99px; padding:7px 16px; font-weight:700; font-size:13px; animation:pop .35s ease; pointer-events:none; z-index:9999; }
-  @keyframes pop { 0%{transform:scale(.4);opacity:0} 70%{transform:scale(1.12)} 100%{transform:scale(1);opacity:1} }
-  /* ── RADAR CHART ── */
-  .radar-chart-wrap { position:relative; width:100%; height:240px; margin-bottom:.5rem; }
+:root{--purple:#8549ba;--purple-light:#f0e6ff;--purple-dark:#5a2d82;--green:#58cc02;--green-light:#f0ffe0;--green-dark:#2d6e00;--red:#ff4b4b;--red-light:#fff0f0;--red-dark:#8b0000;--amber:#e07000;--amber-light:#faeeda;--teal:#1D9E75;--blue:#185fa5;--bg:#ffffff;--bg2:#f7f7f5;--bg3:#f0efe8;--text:#1a1a1a;--text2:#6b6b6b;--text3:#9b9b9b;--border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.22);--radius:12px;--radius-sm:8px;--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);}
+@media(prefers-color-scheme:dark){:root{--bg:#1a1a1a;--bg2:#252525;--bg3:#2f2f2f;--text:#f0f0f0;--text2:#aaaaaa;--text3:#707070;--border:rgba(255,255,255,0.12);--border2:rgba(255,255,255,0.22);--purple-light:#2d1f45;--green-light:#1a2e10;--red-light:#2e1010;--amber-light:#2e2010;}}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);overscroll-behavior:none;}
+#app{height:100vh;overflow-y:auto;overflow-x:hidden;padding:calc(var(--safe-top) + 12px) 16px calc(var(--safe-bottom) + 72px);-webkit-overflow-scrolling:touch;}
+/* HEADER */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:.25rem 0 1rem;gap:8px;}
+.pill{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:500;color:var(--text2);}
+.pill .v{font-size:13px;font-weight:500;color:var(--text);}
+/* PROGRESS */
+.pbar-w{background:var(--bg2);border-radius:99px;height:8px;margin-bottom:1.25rem;overflow:hidden;}
+.pbar{height:8px;border-radius:99px;background:var(--purple);transition:width .4s ease;}
+/* CARDS */
+.card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);padding:1.125rem 1.25rem;margin-bottom:.875rem;}
+.qtag{font-size:11px;font-weight:500;color:var(--purple);background:var(--purple-light);border-radius:6px;padding:3px 9px;display:inline-block;margin-bottom:6px;}
+.ptag{font-size:11px;font-weight:500;color:#0c447c;background:#e6f1fb;border-radius:6px;padding:3px 9px;display:inline-block;margin-bottom:6px;margin-left:4px;}
+.btag{font-size:11px;font-weight:500;color:#27500a;background:#eaf3de;border-radius:6px;padding:3px 9px;display:inline-block;margin-bottom:6px;margin-left:4px;}
+.stag{font-size:11px;font-weight:500;color:#533d00;background:var(--amber-light);border-radius:6px;padding:3px 9px;display:inline-block;margin-bottom:6px;margin-left:4px;}
+.sr-tag{font-size:11px;font-weight:500;border-radius:6px;padding:3px 9px;display:inline-block;margin-bottom:6px;margin-left:4px;}
+.sr-new{background:#e6f0ff;color:#0a3f8f;}.sr-review{background:var(--amber-light);color:#633806;}.sr-hard{background:var(--red-light);color:var(--red-dark);}.sr-mastered{background:var(--green-light);color:var(--green-dark);}
+.qtext{font-size:16px;line-height:1.6;color:var(--text);font-weight:500;}
+.scenario-box{background:var(--bg2);border-left:3px solid var(--purple);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:.75rem 1rem;margin-bottom:.75rem;font-size:13px;line-height:1.6;color:var(--text2);}
+/* OPTIONS */
+.opts{display:grid;gap:9px;margin-bottom:.875rem;}
+.opt{background:var(--bg);border:1.5px solid var(--border2);border-radius:var(--radius);padding:13px 14px;text-align:left;font-size:15px;color:var(--text);cursor:pointer;transition:border-color .12s,background .12s,transform .08s;display:flex;align-items:flex-start;gap:10px;width:100%;-webkit-appearance:none;}
+.opt:active:not(:disabled){transform:scale(.98);}
+.opt.sel{border-color:var(--purple);background:var(--purple-light);color:var(--purple-dark);font-weight:500;}
+.opt.cor{border-color:var(--green);background:var(--green-light);color:var(--green-dark);}
+.opt.inc{border-color:var(--red);background:var(--red-light);color:var(--red-dark);}
+.opt:disabled{cursor:default;}
+.oltr{font-size:12px;font-weight:500;background:var(--bg2);border-radius:6px;width:24px;height:24px;min-width:24px;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+.opt.sel .oltr{background:#dcc8f7;color:var(--purple-dark);}.opt.cor .oltr{background:#c6f0a0;color:var(--green-dark);}.opt.inc .oltr{background:#ffc5c5;color:var(--red-dark);}
+/* FEEDBACK */
+.fb{border-radius:var(--radius);padding:.875rem 1rem;margin-bottom:.875rem;font-size:14px;line-height:1.55;}
+.fb.cor{background:var(--green-light);border:1px solid var(--green);color:var(--green-dark);}
+.fb.inc{background:var(--red-light);border:1px solid var(--red);color:var(--red-dark);}
+.fb-hd{font-weight:500;font-size:15px;margin-bottom:4px;}
+/* BUTTONS */
+.abtn{width:100%;padding:14px;border-radius:var(--radius);font-size:16px;font-weight:500;border:none;cursor:pointer;transition:opacity .15s,transform .1s;}
+.abtn:active{transform:scale(.98);}
+.abtn.pur{background:var(--purple);color:white;}.abtn.grn{background:var(--green);color:white;}.abtn.red{background:var(--red);color:white;}.abtn.amb{background:var(--amber);color:white;}.abtn.blue{background:var(--blue);color:white;}.abtn.teal{background:var(--teal);color:white;}.abtn.out{background:transparent;border:1.5px solid var(--border2);color:var(--text);}
+.abtn:disabled{background:var(--bg2);color:var(--text3);cursor:default;}
+.btn-row{display:grid;gap:9px;}
+/* TIMER / ERROR */
+.tmr{display:flex;align-items:center;gap:5px;font-size:15px;font-weight:500;}
+.tmr.warn{color:var(--amber);}.tmr.dng{color:var(--red);animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.ebar{background:var(--red-light);border:1px solid var(--red);border-radius:var(--radius-sm);padding:8px 12px;font-size:13px;color:var(--red-dark);display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem;}
+.dots{display:flex;gap:3px;flex-wrap:wrap;}
+.dot{width:11px;height:11px;border-radius:50%;background:var(--bg2);border:1px solid var(--border);}.dot.w{background:var(--red);border-color:var(--red);}
+/* HOME */
+.hero{text-align:center;padding:1.25rem 0 1rem;}
+.hero-pills{display:flex;gap:16px;justify-content:center;margin-top:.625rem;font-size:13px;color:var(--text2);font-weight:500;}
+.sr-overview{background:var(--bg2);border-radius:var(--radius);padding:.875rem 1.125rem;margin-bottom:.875rem;}
+.sr-stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:.5rem;}
+.sr-stat{text-align:center;}.sr-stat .v{font-size:19px;font-weight:500;color:var(--text);}.sr-stat .l{font-size:10px;color:var(--text2);}
+.due-banner{background:var(--amber-light);border:1.5px solid var(--amber);border-radius:var(--radius);padding:.75rem 1rem;margin-bottom:.875rem;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .15s;}
+.due-banner:active{background:#f0d5b0;}
+.mode-list{display:grid;gap:9px;}
+.mc{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);padding:.875rem 1rem;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .15s;}
+.mc:active{background:var(--bg2);}
+.mi{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.mt{font-weight:500;font-size:15px;color:var(--text);}.ms{font-size:12px;color:var(--text2);margin-top:2px;line-height:1.4;}
+.bdg{font-size:10px;font-weight:500;border-radius:99px;padding:2px 8px;margin-left:5px;}
+.bdg-p{background:var(--purple-light);color:var(--purple-dark);}.bdg-r{background:var(--red-light);color:var(--red-dark);}.bdg-a{background:var(--amber-light);color:#633806;}.bdg-b{background:#e6f1fb;color:#0c447c;}.bdg-g{background:#eaf3de;color:#27500a;}.bdg-t{background:#e1f5ee;color:#085041;}
+/* PERSIST */
+.persist-box{background:var(--bg2);border-radius:var(--radius);padding:.875rem 1.125rem;margin-top:1rem;}
+.persist-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:.5rem;}
+.persist-btn{background:var(--bg);border:.5px solid var(--border2);border-radius:var(--radius-sm);padding:.625rem;text-align:center;cursor:pointer;font-size:14px;font-weight:500;color:var(--text);transition:border-color .15s;}
+.persist-btn:active{border-color:var(--purple);color:var(--purple);}
+/* RESULT */
+.result-screen{text-align:center;padding:.5rem 0;}
+.srow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.125rem;}
+.sc{background:var(--bg2);border-radius:var(--radius-sm);padding:.875rem;text-align:center;}
+.sc .sv{font-size:22px;font-weight:500;color:var(--text);}.sc .sl{font-size:11px;color:var(--text2);margin-top:2px;}
+.radar-wrap{text-align:left;margin-bottom:1.25rem;}
+.radar-title{font-size:13px;font-weight:500;color:var(--text2);margin-bottom:.625rem;}
+.domain-bars{display:grid;gap:9px;}
+.db-row{display:grid;grid-template-columns:95px 1fr 38px;align-items:center;gap:8px;font-size:13px;}
+.db-label{color:var(--text2);text-align:right;font-size:12px;}.db-track{background:var(--bg2);border-radius:99px;height:12px;overflow:hidden;}.db-fill{height:12px;border-radius:99px;transition:width .7s ease;}.db-pct{color:var(--text);font-weight:500;font-size:12px;}
+/* REVIEW */
+.rev-section{text-align:left;margin-bottom:1.25rem;}
+.rev-hd{font-size:13px;font-weight:500;color:var(--text2);margin-bottom:.625rem;}
+.rev-item{background:var(--bg2);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:7px;font-size:13px;}
+.rq{font-weight:500;color:var(--text);margin-bottom:4px;line-height:1.4;}.ra{color:var(--green-dark);margin-bottom:2px;}.ry{color:var(--red-dark);margin-bottom:2px;}.rexp{color:var(--text2);font-size:12px;margin-top:4px;line-height:1.5;}
+/* FAIL ANIMATION */
+@keyframes failDrop{0%{transform:translateY(-50px) scale(1.4);opacity:0}60%{transform:translateY(8px) scale(.93)}80%{transform:translateY(-4px) scale(1.03)}100%{transform:translateY(0) scale(1);opacity:1}}
+@keyframes shake{0%,100%{transform:translateX(0)}10%,30%,50%,70%,90%{transform:translateX(-10px)}20%,40%,60%,80%{transform:translateX(10px)}}
+@keyframes slideUp{0%{transform:translateY(30px);opacity:0}100%{transform:translateY(0);opacity:1}}
+@keyframes rainDrop{0%{transform:translateY(-10px);opacity:0}15%{opacity:1}100%{transform:translateY(80px);opacity:0}}
+.fail-screen{text-align:center;padding:1rem 0;}
+.fail-icon{font-size:72px;line-height:1;display:block;animation:failDrop .65s cubic-bezier(.36,.07,.19,.97) both;}
+.fail-shake{display:inline-block;animation:shake .55s cubic-bezier(.36,.07,.19,.97) both .75s;}
+.fail-title{font-size:26px;font-weight:500;color:var(--red);animation:slideUp .4s ease both .95s;opacity:0;margin-top:.75rem;}
+.fail-sub{font-size:14px;color:var(--text2);line-height:1.55;animation:slideUp .4s ease both 1.15s;opacity:0;margin-top:.375rem;margin-bottom:1.25rem;}
+.fail-stats{animation:slideUp .4s ease both 1.35s;opacity:0;}
+.fail-actions{animation:slideUp .4s ease both 1.55s;opacity:0;margin-top:1rem;}
+.fail-rain{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9990;overflow:hidden;}
+.rain-drop{position:absolute;animation:rainDrop 1.8s ease-in infinite;}
+/* CONFETTI */
+#confetti-canvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9989;}
+/* TOAST */
+.toast{position:fixed;top:calc(var(--safe-top) + 12px);right:12px;background:#ffd900;color:#7a5f00;border-radius:99px;padding:7px 16px;font-weight:500;font-size:13px;animation:tpop .35s ease;pointer-events:none;z-index:9999;}
+@keyframes tpop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.badge-toast{position:fixed;top:calc(var(--safe-top) + 12px);left:50%;transform:translateX(-50%);background:var(--bg);border:1.5px solid #ffd900;border-radius:var(--radius);padding:10px 16px;display:flex;align-items:center;gap:10px;animation:bpop .4s ease;pointer-events:none;z-index:9999;min-width:240px;}
+@keyframes bpop{0%{transform:translateX(-50%) scale(.4);opacity:0}70%{transform:translateX(-50%) scale(1.05)}100%{transform:translateX(-50%) scale(1);opacity:1}}
+/* HISTORY */
+.hist-empty{text-align:center;padding:3rem 0;color:var(--text2);font-size:15px;line-height:2;}
+.hist-item{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);padding:.875rem 1.125rem;margin-bottom:.75rem;}
+.hist-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;}
+.trend-row{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:1rem;}
+.trend-card{background:var(--bg2);border-radius:var(--radius-sm);padding:.625rem;text-align:center;}
+.trend-card .tv{font-size:17px;font-weight:500;color:var(--text);}.trend-card .tl{font-size:10px;color:var(--text2);margin-top:1px;}
+/* BOOKMARKS */
+.bm-item{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);padding:.875rem 1.125rem;margin-bottom:.75rem;}
+.bm-q{font-size:14px;font-weight:500;color:var(--text);margin-bottom:.375rem;line-height:1.45;}
+.bm-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.bm-ans{font-size:12px;color:var(--green-dark);}.bm-remove{background:none;border:none;cursor:pointer;font-size:11px;color:var(--text3);margin-left:auto;padding:2px 6px;border-radius:4px;}
+/* FORMULA */
+.formula-cat{margin-bottom:1.25rem;}
+.fcat-hd{font-size:11px;font-weight:500;color:var(--text2);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.04em;}
+.formula-card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);padding:.875rem 1.125rem;margin-bottom:.625rem;cursor:pointer;transition:border-color .15s;}
+.formula-card.open{border-color:var(--purple);}
+.fc-top{display:flex;align-items:center;justify-content:space-between;}
+.fc-name{font-size:14px;font-weight:500;color:var(--text);}
+.fc-formula{font-size:15px;font-weight:500;color:var(--purple);font-family:monospace;margin:.375rem 0 0;}
+.fc-body{margin-top:.625rem;padding-top:.625rem;border-top:.5px solid var(--border);}
+.fc-example{background:var(--bg2);border-radius:var(--radius-sm);padding:.625rem .875rem;font-size:13px;color:var(--text2);line-height:1.6;margin-top:.5rem;}
+.fc-tip{font-size:12px;color:var(--purple);margin-top:.5rem;}
+/* GLOSSARY */
+.gloss-controls{display:flex;gap:6px;margin-bottom:.875rem;flex-wrap:wrap;}
+.gloss-filter{font-size:12px;font-weight:500;border-radius:99px;padding:5px 12px;border:1.5px solid var(--border2);background:var(--bg);color:var(--text2);cursor:pointer;transition:all .15s;}
+.gloss-filter.active{border-color:var(--purple);background:var(--purple-light);color:var(--purple-dark);}
+.gloss-progress{background:var(--bg2);border-radius:var(--radius-sm);padding:.625rem 1rem;margin-bottom:.875rem;display:flex;align-items:center;justify-content:space-between;font-size:13px;}
+.flip-card{perspective:800px;margin-bottom:.75rem;cursor:pointer;}
+.flip-inner{position:relative;width:100%;transition:transform .45s cubic-bezier(.4,0,.2,1);transform-style:preserve-3d;}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg);}
+.flip-front,.flip-back{backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:var(--radius);padding:1.125rem 1.25rem;border:.5px solid var(--border);}
+.flip-front{background:var(--bg);min-height:90px;}
+.flip-back{background:var(--purple-light);border-color:var(--purple);position:absolute;top:0;left:0;width:100%;transform:rotateY(180deg);min-height:90px;}
+.flip-term{font-size:17px;font-weight:500;color:var(--text);margin-bottom:.25rem;}
+.flip-cat{font-size:11px;color:var(--text3);}
+.flip-hint{font-size:12px;color:var(--text3);margin-top:.5rem;}
+.flip-def{font-size:14px;line-height:1.6;color:var(--purple-dark);font-weight:500;}
+.flip-example{font-size:12px;color:var(--purple);margin-top:.5rem;line-height:1.5;}
+/* GLOSSARY QUIZ */
+.gloss-mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem;}
+.gloss-mode-tab{background:var(--bg);border:1.5px solid var(--border2);border-radius:var(--radius);padding:.875rem;text-align:center;cursor:pointer;transition:all .15s;}
+.gloss-mode-tab:active,.gloss-mode-tab.active{border-color:var(--purple);background:var(--purple-light);}
+.gloss-mode-icon{font-size:24px;margin-bottom:.375rem;}
+.gloss-mode-title{font-size:14px;font-weight:500;color:var(--text);}
+.gloss-mode-sub{font-size:11px;color:var(--text2);margin-top:2px;}
+.gloss-quiz-card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);padding:1.5rem 1.25rem;margin-bottom:1rem;text-align:center;}
+.gloss-quiz-term{font-size:24px;font-weight:500;color:var(--text);margin-bottom:.375rem;}
+.gloss-quiz-sub{font-size:12px;color:var(--text2);}
+.gloss-quiz-opts{display:grid;gap:9px;margin-bottom:.875rem;}
+.gloss-quiz-opt{background:var(--bg);border:1.5px solid var(--border2);border-radius:var(--radius);padding:13px 14px;text-align:left;font-size:14px;color:var(--text);cursor:pointer;transition:border-color .12s,background .12s;line-height:1.5;-webkit-appearance:none;}
+.gloss-quiz-opt:active:not(:disabled):not(.gcor):not(.ginc):not(.gsel){background:var(--bg2);}
+.gloss-quiz-opt.gsel{border-color:var(--purple);background:var(--purple-light);color:var(--purple-dark);font-weight:500;}
+.gloss-quiz-opt.gcor{border-color:var(--green);background:var(--green-light);color:var(--green-dark);font-weight:500;}
+.gloss-quiz-opt.ginc{border-color:var(--red);background:var(--red-light);color:var(--red-dark);}
+.gloss-quiz-opt:disabled{cursor:default;}
+/* ACHIEVEMENTS */
+.ach-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.75rem;margin-bottom:1rem;}
+.ach-card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);padding:.875rem;text-align:center;}
+.ach-card.earned{border-color:#ffd900;background:#fffbe6;}
+.ach-card.locked{opacity:.5;}
+.ach-icon{font-size:32px;margin-bottom:.375rem;line-height:1;}
+.ach-name{font-size:13px;font-weight:500;color:var(--text);}
+.ach-desc{font-size:11px;color:var(--text2);margin-top:2px;line-height:1.4;}
+.ach-earned-tag{font-size:10px;font-weight:500;background:#ffd900;color:#7a5f00;border-radius:99px;padding:2px 8px;margin-top:4px;display:inline-block;}
+.ach-progress{font-size:10px;color:var(--text3);margin-top:3px;}
+/* FLAG BUTTON */
+.flag-btn{background:none;border:none;cursor:pointer;font-size:20px;padding:2px 6px;border-radius:6px;line-height:1;}
+/* NAV */
+.nav-bar{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:.5px solid var(--border);display:flex;padding-bottom:var(--safe-bottom);z-index:100;}
+.nav-btn{flex:1;padding:.625rem .1rem .5rem;text-align:center;cursor:pointer;border:none;background:none;color:var(--text2);font-size:9px;font-weight:500;transition:color .15s;}
+.nav-btn.active{color:var(--purple);}.nav-btn .ni{font-size:20px;display:block;line-height:1;margin-bottom:2px;}
+/* RADAR */
+.radar-chart-wrap{position:relative;width:100%;height:240px;margin-bottom:.5rem;}
 </style>
 </head>
 <body>
+<canvas id="confetti-canvas"></canvas>
+<div id="fail-rain" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9990;overflow:hidden;display:none;"></div>
 <div id="app"></div>
+<div class="nav-bar">
+  <button class="nav-btn active" id="nav-home" onclick="navTo('home')"><span class="ni">🏠</span>Home</button>
+  <button class="nav-btn" id="nav-formulas" onclick="navTo('formulas')"><span class="ni">📐</span>Formulas</button>
+  <button class="nav-btn" id="nav-glossary" onclick="navTo('glossary')"><span class="ni">📖</span>Glossary</button>
+  <button class="nav-btn" id="nav-history" onclick="navTo('history')"><span class="ni">📈</span>History</button>
+  <button class="nav-btn" id="nav-achievements" onclick="navTo('achievements')"><span class="ni">🏅</span>Badges</button>
+  <button class="nav-btn" id="nav-bookmarks" onclick="navTo('bookmarks')"><span class="ni">🔖</span>Saved</button>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-const ALL_Q = [
-  {id:0,domain:"Predictive",tag:"Initiation",q:"A project manager is assigned to a new project. What should be done FIRST?",opts:["Create the project schedule","Identify stakeholders","Develop the WBS","Define project scope"],ans:1,exp:"Stakeholder identification is critical before any planning — it's one of the first processes in project initiation per PMBOK."},
-  {id:1,domain:"Agile",tag:"Sprint Planning",q:"During sprint planning the team has more work than capacity. What should the Scrum Master do?",opts:["Tell the team to work overtime","Ask the Product Owner to reprioritize","Remove items to match capacity","Extend the sprint duration"],ans:2,exp:"Remove items to match realistic capacity. The sprint timebox is sacred — never force overtime or extend it."},
-  {id:2,domain:"Predictive",tag:"Risk",q:"A risk has 40% probability and $50,000 impact. What is the EMV?",opts:["$50,000","$30,000","$20,000","$10,000"],ans:2,exp:"EMV = 0.40 × $50,000 = $20,000. Used in decision tree analysis and quantitative risk assessment."},
-  {id:3,domain:"Agile",tag:"Retrospective",q:"A team consistently misses sprint goals. What is the BEST Scrum Master action?",opts:["Report team to management","Facilitate a retrospective to find root causes","Add more detailed tasks","Reduce velocity targets"],ans:1,exp:"Retrospectives are the primary Agile improvement tool. Identify systemic issues and help the team self-organize."},
-  {id:4,domain:"Predictive",tag:"Earned Value",q:"BAC=$100k, EV=$40k, AC=$50k. What is the CPI?",opts:["0.80","1.25","0.67","1.50"],ans:0,exp:"CPI = EV/AC = $40k/$50k = 0.80. Below 1.0 means over budget."},
-  {id:5,domain:"Hybrid",tag:"Leadership",q:"A key stakeholder resists an agile transformation. Best approach?",opts:["Ignore concerns","Escalate to sponsor","Actively engage and address concerns","Remove from stakeholder list"],ans:2,exp:"Proactively addressing concerns builds trust and buy-in. Stakeholder engagement is a core PMP competency."},
-  {id:6,domain:"Predictive",tag:"Schedule",q:"Critical path is 30 days. A critical path activity is delayed 5 days. Project end date?",opts:["Same","Delayed 5 days","Depends on float","Delayed up to 5 days"],ans:1,exp:"Critical path activities have zero float. Any delay shifts the end date by the same amount."},
-  {id:7,domain:"Agile",tag:"Kanban",q:"Kanban team sees a bottleneck at Testing. What to do?",opts:["Increase WIP limit for Testing","Decrease WIP limit for Testing","Add more backlog items","Reduce developers"],ans:1,exp:"Decreasing WIP forces the team to swarm the bottleneck before pulling new work — core Kanban principle."},
-  {id:8,domain:"Predictive",tag:"Scope",q:"Customer requests a small out-of-scope change. PM should do FIRST?",opts:["Implement immediately","Reject the change","Submit a change request","Inform the sponsor"],ans:2,exp:"All changes go through Integrated Change Control starting with a formal change request — no matter how small."},
-  {id:9,domain:"Agile",tag:"Definition of Done",q:"Who is responsible for defining the Definition of Done in Scrum?",opts:["Product Owner","Scrum Master","Development Team","Stakeholders"],ans:2,exp:"The Development Team creates and owns the DoD. PO ensures it meets quality needs, but the team defines it."},
-  {id:10,domain:"Predictive",tag:"Communication",q:"A PM has 10 stakeholders. How many communication channels?",opts:["10","45","90","100"],ans:1,exp:"Channels = n(n-1)/2 = 10×9/2 = 45. Essential PMP formula."},
-  {id:11,domain:"Predictive",tag:"Quality",q:"Which quality tool identifies the most common causes of defects?",opts:["Control chart","Pareto diagram","Scatter diagram","Fishbone diagram"],ans:1,exp:"The Pareto diagram (80/20 rule) identifies the vital few causes responsible for most defects."},
-  {id:12,domain:"Agile",tag:"Scrum",q:"A stakeholder wants to add a feature mid-sprint. What happens?",opts:["Add to current sprint","Add to product backlog","Cancel the sprint","Scrum Master decides"],ans:1,exp:"New items go to the Product Backlog and are prioritized by the PO for future sprints. Sprint commitment is protected."},
-  {id:13,domain:"Predictive",tag:"Procurement",q:"Which contract type places the MOST financial risk on the seller?",opts:["Cost Plus Fixed Fee","Time and Materials","Firm Fixed Price","Cost Plus Incentive Fee"],ans:2,exp:"Firm Fixed Price: seller bears all cost overrun risk. Cost exceeds estimate? Seller absorbs the difference."},
-  {id:14,domain:"Predictive",tag:"Integration",q:"PRIMARY purpose of a project charter?",opts:["Define detailed requirements","Formally authorize the project","Allocate the budget","Assign team members"],ans:1,exp:"The charter formally authorizes the project and gives the PM authority to apply resources."},
-  {id:15,domain:"Hybrid",tag:"Metrics",q:"Team velocity declines over several sprints. What to examine FIRST?",opts:["Increase sprint length","Check for impediments in retrospective","Replace team members","Reduce backlog items"],ans:1,exp:"Declining velocity signals systemic impediments. The retrospective is the right forum for root cause analysis."},
-  {id:16,domain:"Predictive",tag:"Risk",q:"Sharing risk with a third party (e.g., insurance) is called:",opts:["Avoid","Mitigate","Transfer","Accept"],ans:2,exp:"Risk Transfer shifts the negative impact to a third party. It reassigns ownership, not eliminates the risk."},
-  {id:17,domain:"Agile",tag:"User Stories",q:"A well-formed user story follows which format?",opts:["As a [role], I want [feature] so that [benefit]","Feature: [name], Description: [detail]","Task: [action], Owner: [name]","Objective: [goal], KPI: [metric]"],ans:0,exp:"The standard user story captures who needs it, what they need, and why — enabling value-driven development."},
-  {id:18,domain:"Predictive",tag:"Earned Value",q:"SPI = 0.75 means the project is:",opts:["25% ahead of schedule","25% behind schedule","75% complete","On schedule"],ans:1,exp:"SPI = EV/PV = 0.75 means you're getting $0.75 of planned work per $1.00 scheduled — 25% behind."},
-  {id:19,domain:"Predictive",tag:"Closing",q:"During project closing, a PM should ensure:",opts:["All risks eliminated","Lessons learned documented","Team is reassigned","Budget surplus returned"],ans:1,exp:"Lessons learned documentation is a critical closing activity that benefits future projects via OPAs."},
-  {id:20,domain:"Agile",tag:"Prioritization",q:"Which backlog prioritization technique considers both value and effort?",opts:["MoSCoW","WSJF","Kano model","Story mapping"],ans:1,exp:"WSJF (Weighted Shortest Job First) divides Cost of Delay by duration. High value + low effort = top priority."},
-  {id:21,domain:"Predictive",tag:"Stakeholders",q:"Stakeholder has HIGH power but LOW interest. Strategy?",opts:["Manage closely","Keep informed","Keep satisfied","Monitor"],ans:2,exp:"High power/Low interest = Keep Satisfied. They have authority but aren't engaged — keep happy to avoid interference."},
-  {id:22,domain:"Hybrid",tag:"Planning",q:"Rolling wave planning means:",opts:["Entire project planned upfront","Near-term in detail; future high-level","Only risks planned in detail","Schedule rolls over weekly"],ans:1,exp:"Rolling wave = progressive elaboration — detail near-term, high-level for future. Common in hybrid/agile."},
-  {id:23,domain:"Predictive",tag:"Quality",q:"Prevention costs are incurred to:",opts:["Fix defects after they occur","Appraise work quality","Avoid defects occurring","Handle customer complaints"],ans:2,exp:"Prevention costs (training, process design, reviews) stop defects before they occur — reducing total Cost of Quality."},
-  {id:24,domain:"Agile",tag:"Scrum",q:"Standard Scrum sprint length?",opts:["1 week","1–4 weeks","1–3 months","Variable, no limit"],ans:1,exp:"Sprints are timeboxed at 1–4 weeks. Most teams use 2-week sprints. The timebox is fixed for the whole project."},
-  {id:25,domain:"Predictive",tag:"Risk",q:"A risk register PRIMARILY contains:",opts:["Project budget details","Identified risks and response plans","Team performance reviews","Stakeholder contacts"],ans:1,exp:"The risk register documents identified risks, probability, impact, owners, and response strategies. It's a living document."},
-  {id:26,domain:"Predictive",tag:"Schedule",q:"Float (slack) is defined as:",opts:["Total project duration","How long an activity can be delayed without delaying the project","Difference between planned and actual cost","Buffer added to estimates"],ans:1,exp:"Float = LS − ES. An activity can slip this much without affecting the project end date. Critical path = zero float."},
-  {id:27,domain:"Hybrid",tag:"Governance",q:"A PMO's PRIMARY role is to:",opts:["Manage individual projects","Standardize governance and provide support","Approve all budgets","Replace the PM"],ans:1,exp:"A PMO standardizes practices, provides templates and training, and offers oversight. It's a center of excellence."},
-  {id:28,domain:"Agile",tag:"Daily Standup",q:"MAIN purpose of the daily standup?",opts:["Report status to management","Identify and remove impediments","Plan the next sprint","Review completed stories"],ans:1,exp:"The daily scrum synchronizes the team and surfaces impediments. It's a team event — not a status report."},
-  {id:29,domain:"Predictive",tag:"Scope",q:"Gold plating refers to:",opts:["Exceeding quality standards","Adding features beyond agreed scope without authorization","Using premium vendors","Padding the budget"],ans:1,exp:"Gold plating = unrequested extras. Even well-intentioned, it's scope creep and wastes resources without approval."},
-  {id:30,domain:"Predictive",tag:"Integration",q:"Configuration management ensures:",opts:["Team performance is tracked","Documents and deliverables are versioned and controlled","Risks are identified early","Stakeholders get timely updates"],ans:1,exp:"Configuration management controls versions of project docs and deliverables — everyone works from the correct version."},
-  {id:31,domain:"Agile",tag:"PI Planning",q:"PI Planning is a key ceremony in which framework?",opts:["Scrum","Kanban","SAFe","XP"],ans:2,exp:"PI Planning is a SAFe event where multiple agile teams align on priorities, dependencies, and goals for 8–12 weeks."},
-  {id:32,domain:"Predictive",tag:"Earned Value",q:"BAC=$200k, CPI=0.80. EAC using current CPI?",opts:["$160,000","$200,000","$250,000","$240,000"],ans:2,exp:"EAC = BAC/CPI = $200k/0.80 = $250,000. Project expected to cost $50k more at current performance rate."},
-  {id:33,domain:"Predictive",tag:"Procurement",q:"A Make-or-Buy analysis helps the PM decide:",opts:["Which vendors to use","Whether to produce internally or outsource","How to structure the contract","When to close the contract"],ans:1,exp:"Make-or-Buy evaluates costs and strategy to determine internal production vs. external procurement."},
-  {id:34,domain:"Agile",tag:"Velocity",q:"Velocity=40 pts/sprint, backlog=200 pts. Sprints needed?",opts:["4","5","6","8"],ans:1,exp:"Sprints = 200/40 = 5. Velocity drives release planning in agile projects."},
-  {id:35,domain:"Hybrid",tag:"Change",q:"PM managing organizational change alongside project. BEST approach?",opts:["Focus only on deliverables","Apply change management alongside delivery","Delegate to HR","Ignore resistance"],ans:1,exp:"Effective PMs integrate change management to address human aspects — building adoption while delivering technically."},
-  {id:36,domain:"Predictive",tag:"Risk",q:"Residual risk is:",opts:["Risk fully eliminated","Risk remaining after implementing a response","Secondary risk caused by a response","An unidentified risk"],ans:1,exp:"Residual risk remains after a response is applied. Monitor it and allocate contingency reserves accordingly."},
-  {id:37,domain:"Agile",tag:"Backlog Refinement",q:"During backlog refinement, the team should:",opts:["Assign tasks to members","Estimate, clarify, and prioritize items","Write the Definition of Done","Conduct the sprint review"],ans:1,exp:"Backlog refinement breaks down, estimates, and orders items to keep them sprint-ready. It's ongoing, not a single event."},
-  {id:38,domain:"Predictive",tag:"Stakeholders",q:"A stakeholder analysis matrix maps stakeholders by:",opts:["Job title and salary","Power/Interest or Power/Influence","Years of experience","Location"],ans:1,exp:"The stakeholder grid maps power vs. interest/influence to determine appropriate engagement strategies."},
-  {id:39,domain:"Predictive",tag:"Schedule",q:"What technique adds time buffers at the end of project phases?",opts:["Fast tracking","Crashing","Critical Chain Method","Resource leveling"],ans:2,exp:"Critical Chain Method adds project and feeding buffers to protect delivery dates from task duration variability."},
-  {id:40,domain:"Agile",tag:"Scrum",q:"Who has final authority over product backlog priorities in Scrum?",opts:["Scrum Master","Development Team","Product Owner","Steering Committee"],ans:2,exp:"The Product Owner owns backlog ordering — balancing business value, stakeholder needs, and risk to maximize ROI."},
-  {id:41,domain:"Predictive",tag:"Quality",q:"Control chart shows data points outside control limits. This indicates:",opts:["Normal process variation","Process is in control","Assignable (special) cause variation","Random variation only"],ans:2,exp:"Points outside control limits signal assignable cause variation — investigate and apply corrective action."},
-  {id:42,domain:"Hybrid",tag:"Metrics",q:"Which metric best indicates sustainable agile team delivery?",opts:["Sprint velocity","Burndown chart","Team happiness index","Consistent velocity over time"],ans:3,exp:"Consistent velocity over multiple sprints = sustainable, predictable pace. Erratic velocity signals instability."},
-  {id:43,domain:"Predictive",tag:"Risk",q:"Contingency reserves are used to address:",opts:["Unknown unknowns","Known unknown risks that have occurred","Management overruns","Scope changes"],ans:1,exp:"Contingency reserves address known unknowns — identified risks that may or may not occur."},
-  {id:44,domain:"Predictive",tag:"Integration",q:"Which document governs how the project is executed, monitored, and controlled?",opts:["Project Charter","Project Management Plan","Scope Statement","Communications Plan"],ans:1,exp:"The Project Management Plan integrates all subsidiary plans and baselines — it's the master governing document."},
+/* ── CONFETTI ── */
+const confettiCanvas=document.getElementById('confetti-canvas');
+const ctx2d=confettiCanvas.getContext('2d');
+let confettiParticles=[];let confettiRunning=false;
+const CC=['#8549ba','#58cc02','#ffd900','#ff4b4b','#1D9E75','#185fa5','#e07000','#f0e6ff'];
+function launchConfetti(){
+  confettiCanvas.width=window.innerWidth;confettiCanvas.height=window.innerHeight;
+  confettiParticles=[];
+  for(let i=0;i<180;i++){confettiParticles.push({x:Math.random()*confettiCanvas.width,y:-20-Math.random()*120,w:6+Math.random()*8,h:3+Math.random()*5,color:CC[Math.floor(Math.random()*CC.length)],vx:(Math.random()-.5)*4,vy:2+Math.random()*4,rot:Math.random()*360,rotV:(Math.random()-.5)*8,opacity:1});}
+  confettiRunning=true;animateConfetti();setTimeout(()=>{confettiRunning=false;},4500);
+}
+function animateConfetti(){
+  if(!confettiRunning){ctx2d.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);return;}
+  ctx2d.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
+  confettiParticles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.rot+=p.rotV;p.vy+=0.08;if(p.y>confettiCanvas.height+20)p.opacity=Math.max(0,p.opacity-.05);ctx2d.save();ctx2d.globalAlpha=p.opacity;ctx2d.translate(p.x,p.y);ctx2d.rotate(p.rot*Math.PI/180);ctx2d.fillStyle=p.color;ctx2d.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx2d.restore();});
+  requestAnimationFrame(animateConfetti);
+}
+
+/* ── FAIL RAIN ── */
+function launchFailRain(){
+  const rain=document.getElementById('fail-rain');
+  rain.style.display='block';rain.innerHTML='';
+  const emojis=['💧','☔','😢','📉','❌','😭','💔'];
+  for(let i=0;i<30;i++){
+    const d=document.createElement('div');d.className='rain-drop';
+    d.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+    d.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*20}%;animation-delay:${Math.random()*2}s;animation-duration:${1.4+Math.random()*.8}s;font-size:${16+Math.random()*14}px;position:absolute;animation:rainDrop 1.8s ease-in infinite;`;
+    rain.appendChild(d);
+  }
+  setTimeout(()=>{rain.style.display='none';rain.innerHTML='';},5500);
+}
+
+/* ── DATA ── */
+const GLOSSARY=[
+  {term:"WBS",cat:"Scope",def:"Work Breakdown Structure — hierarchical decomposition of project scope into work packages.",example:"Project → Phase → Deliverable → Work Package"},
+  {term:"Critical Path",cat:"Schedule",def:"Longest sequence of dependent activities. Determines the earliest possible project completion date.",example:"Any delay on the critical path delays the whole project."},
+  {term:"Float / Slack",cat:"Schedule",def:"Amount of time an activity can be delayed without delaying the project end date. Critical path = zero float.",example:"Float = LS − ES or LF − EF"},
+  {term:"EVM",cat:"Earned Value",def:"Earned Value Management — integrates scope, schedule, and cost to measure project performance objectively.",example:"Uses PV, EV, and AC to calculate CPI and SPI."},
+  {term:"CPI",cat:"Earned Value",def:"Cost Performance Index = EV ÷ AC. Cost efficiency. CPI < 1 = over budget.",example:"EV=$40k, AC=$50k → CPI=0.80"},
+  {term:"SPI",cat:"Earned Value",def:"Schedule Performance Index = EV ÷ PV. Schedule efficiency. SPI < 1 = behind schedule.",example:"EV=$40k, PV=$50k → SPI=0.80"},
+  {term:"BAC",cat:"Earned Value",def:"Budget At Completion — total planned budget for the project.",example:"Project budgeted for $500k → BAC=$500k"},
+  {term:"EAC",cat:"Earned Value",def:"Estimate At Completion = BAC ÷ CPI. Forecasts total project cost at current performance.",example:"BAC=$100k, CPI=0.80 → EAC=$125k"},
+  {term:"TCPI",cat:"Earned Value",def:"To-Complete Performance Index = (BAC−EV)÷(BAC−AC). Efficiency needed on remaining work to meet BAC.",example:"TCPI > 1.0 = must work more efficiently than before."},
+  {term:"Risk Register",cat:"Risk",def:"Document recording identified risks, probability, impact, owners, and planned responses.",example:"Living document updated at every risk review."},
+  {term:"EMV",cat:"Risk",def:"Expected Monetary Value = Probability × Impact. Quantifies risk in dollar terms.",example:"30% × $100k = $30k EMV"},
+  {term:"Contingency Reserve",cat:"Risk",def:"Budget for known unknown risks — identified risks that may or may not occur.",example:"Distinct from management reserve (unknown unknowns)."},
+  {term:"Monte Carlo",cat:"Risk",def:"Simulation running thousands of iterations to model probability distribution of project outcomes.",example:"Used in quantitative risk analysis for schedule/cost."},
+  {term:"Residual Risk",cat:"Risk",def:"Risk remaining after a risk response has been implemented. Must still be monitored.",example:"Distinct from secondary risk (which arises from the response)."},
+  {term:"Secondary Risk",cat:"Risk",def:"A new risk that arises as a direct result of implementing a risk response.",example:"Fast-tracking creates a rework risk."},
+  {term:"RACI",cat:"Governance",def:"Responsibility Assignment Matrix: Responsible, Accountable, Consulted, Informed. Only one Accountable per task.",example:"Used to clarify roles across deliverables and decisions."},
+  {term:"CCB",cat:"Governance",def:"Change Control Board — group that reviews, approves, or rejects change requests.",example:"All scope changes go through the CCB."},
+  {term:"Integrated Change Control",cat:"Governance",def:"Process of reviewing all change requests and managing changes to baselines before implementation.",example:"No change implemented without this process."},
+  {term:"PMO",cat:"Governance",def:"Project Management Office — standardizes governance, provides templates, training, and oversight.",example:"Can be supportive, controlling, or directive."},
+  {term:"Project Charter",cat:"Integration",def:"Formally authorizes a project and gives the PM authority to apply resources. Signed by sponsor.",example:"Output of Develop Project Charter process."},
+  {term:"Lessons Learned",cat:"Integration",def:"Knowledge gained during a project, documented and stored in organizational process assets for future use.",example:"Captured throughout; finalized at project closure."},
+  {term:"OPA",cat:"Integration",def:"Organizational Process Assets — templates, policies, procedures, historical data, and lessons learned.",example:"Inputs to most planning processes."},
+  {term:"EEF",cat:"Integration",def:"Enterprise Environmental Factors — conditions that influence but aren't controlled by the team.",example:"Market conditions, regulations, company culture."},
+  {term:"Stakeholder Register",cat:"Stakeholders",def:"Identifies stakeholders and records their interests, involvement, and potential impact.",example:"Updated as new stakeholders are identified."},
+  {term:"Power/Interest Grid",cat:"Stakeholders",def:"Maps stakeholders by authority (power) and concern (interest) to guide engagement strategy.",example:"High power/Low interest → Keep Satisfied."},
+  {term:"Servant Leadership",cat:"People",def:"Leadership style prioritizing team needs — removing obstacles, coaching, enabling high performance.",example:"The Scrum Master exemplifies servant leadership."},
+  {term:"Tuckman's Stages",cat:"People",def:"Five team development stages: Forming, Storming, Norming, Performing, Adjourning.",example:"Teams must resolve Storming to reach Performing."},
+  {term:"Emotional Intelligence",cat:"People",def:"Ability to recognize, understand, and manage your own emotions and those of others.",example:"Self-awareness, empathy, and social skills."},
+  {term:"Conflict Resolution",cat:"People",def:"Techniques for addressing disagreements. Collaborating (win-win) is most effective; avoiding is least.",example:"Modes: Collaborating, Compromising, Forcing, Smoothing, Avoiding."},
+  {term:"Maslow's Hierarchy",cat:"People",def:"Physiological → Safety → Social → Esteem → Self-actualization. Lower needs must be met first.",example:"Used to understand what motivates team members."},
+  {term:"Herzberg's Theory",cat:"People",def:"Hygiene factors (salary, conditions) prevent dissatisfaction. Motivators (achievement, growth) drive satisfaction.",example:"A raise won't motivate — it only prevents dissatisfaction."},
+  {term:"Theory X / Theory Y",cat:"People",def:"McGregor: X assumes workers are lazy and need control. Y assumes workers are self-motivated.",example:"Theory Y aligns with modern PM and agile practices."},
+  {term:"Benefits Realization",cat:"Business Environment",def:"Ensuring project outcomes deliver expected business benefits, tracked beyond project closure.",example:"Benefits owner monitors value delivery post-project."},
+  {term:"Business Case",cat:"Business Environment",def:"Justifies project investment with expected benefits, costs, risks, and strategic alignment. A living document.",example:"Updated at key decision gates throughout the project."},
+  {term:"Portfolio",cat:"Business Environment",def:"Projects, programs, and operations managed as a group to achieve strategic objectives.",example:"Portfolio management optimizes investment across all projects."},
+  {term:"Benefits Owner",cat:"Business Environment",def:"Person accountable for ensuring expected business benefits are realized after project closure.",example:"Often a business leader, not the PM."},
+  {term:"Product Backlog",cat:"Agile",def:"Ordered list of everything needed in the product, managed by the Product Owner.",example:"Top items are most refined and highest priority."},
+  {term:"Sprint",cat:"Agile",def:"Fixed-length timebox (1–4 weeks) where the Scrum team creates a potentially releasable increment.",example:"Sprint timebox never changes mid-sprint."},
+  {term:"Velocity",cat:"Agile",def:"Story points completed per sprint. Used for release planning — not for comparing teams.",example:"Average velocity over 3+ sprints is most reliable."},
+  {term:"Definition of Done",cat:"Agile",def:"Shared understanding of what 'complete' means for a user story. Created by the Development Team.",example:"If it doesn't meet the DoD, it can't be accepted."},
+  {term:"Kanban",cat:"Agile",def:"Framework visualizing work, limiting WIP, and using continuous flow rather than sprints.",example:"WIP limits prevent bottlenecks and multitasking."},
+  {term:"Story Points",cat:"Agile",def:"Relative estimation unit capturing effort, complexity, and uncertainty — not time.",example:"A 5-point story is roughly 2.5x a 2-point story."},
+  {term:"Retrospective",cat:"Agile",def:"Scrum ceremony at sprint end where team reflects on process and identifies improvements.",example:"Output: specific action items with owners and due dates."},
+  {term:"WSJF",cat:"Agile",def:"Weighted Shortest Job First — SAFe prioritization dividing Cost of Delay by job duration.",example:"High CoD + short duration = top priority."},
+  {term:"Lead Time",cat:"Agile",def:"Total time from work requested to delivered. Includes wait time.",example:"Lead time ≥ cycle time always."},
+  {term:"Cycle Time",cat:"Agile",def:"Time from when work actively starts to delivery. Excludes wait time.",example:"Reducing cycle time improves flow efficiency."},
+  {term:"MoSCoW",cat:"Agile",def:"Must have, Should have, Could have, Won't have. Prioritization framework for requirements.",example:"Used in backlog prioritization and scope planning."},
 ];
 
-const TOTAL_PREP = 45, MAX_WRONG = 14, EXAM_MIN = 60;
-const DOMAINS = ["Predictive","Agile","Hybrid"];
-const DOMAIN_COLORS = {Predictive:"#8549ba", Agile:"#1D9E75", Hybrid:"#BA7517"};
+const ALL_Q=[
+  {id:0,eco:"Process",tag:"Initiation",type:"factual",q:"A project manager is assigned to a new project. What should be done FIRST?",opts:["Create the project schedule","Identify stakeholders","Develop the WBS","Define project scope"],ans:1,exp:"Stakeholder identification happens before any planning — one of the first PMBOK initiation processes."},
+  {id:1,eco:"Process",tag:"Sprint Planning",type:"factual",q:"During sprint planning the team has more work than capacity. Scrum Master should:",opts:["Tell the team to work overtime","Ask the PO to reprioritize","Remove items to match capacity","Extend the sprint duration"],ans:2,exp:"Remove items to match realistic capacity. Sprint timebox is sacred — never force overtime or extend it."},
+  {id:2,eco:"Process",tag:"Risk",type:"factual",q:"A risk has 40% probability and $50,000 impact. EMV?",opts:["$50,000","$30,000","$20,000","$10,000"],ans:2,exp:"EMV = 0.40 × $50,000 = $20,000."},
+  {id:3,eco:"Process",tag:"Earned Value",type:"factual",q:"BAC=$100k, EV=$40k, AC=$50k. CPI?",opts:["0.80","1.25","0.67","1.50"],ans:0,exp:"CPI = EV/AC = $40k/$50k = 0.80. Over budget."},
+  {id:4,eco:"Process",tag:"Schedule",type:"factual",q:"Critical path activity delayed 5 days. Project end date?",opts:["Same","Delayed 5 days","Depends on float","Delayed up to 5 days"],ans:1,exp:"Critical path activities have zero float. Any delay shifts the end date by the same amount."},
+  {id:5,eco:"Process",tag:"Communication",type:"factual",q:"A PM has 10 stakeholders. How many communication channels?",opts:["10","45","90","100"],ans:1,exp:"Channels = n(n-1)/2 = 10×9/2 = 45."},
+  {id:6,eco:"Process",tag:"Quality",type:"factual",q:"Which tool identifies the most common causes of defects?",opts:["Control chart","Pareto diagram","Scatter diagram","Fishbone diagram"],ans:1,exp:"The Pareto diagram (80/20 rule) identifies the vital few causes responsible for most defects."},
+  {id:7,eco:"Process",tag:"Procurement",type:"factual",q:"Which contract places most financial risk on the seller?",opts:["Cost Plus Fixed Fee","Time and Materials","Firm Fixed Price","Cost Plus Incentive Fee"],ans:2,exp:"Firm Fixed Price: seller bears all cost overrun risk."},
+  {id:8,eco:"Process",tag:"Integration",type:"factual",q:"PRIMARY purpose of a project charter?",opts:["Define detailed requirements","Formally authorize the project","Allocate the budget","Assign team members"],ans:1,exp:"The charter formally authorizes the project and gives the PM authority to apply resources."},
+  {id:9,eco:"Process",tag:"Risk",type:"factual",q:"Sharing risk with a third party is called:",opts:["Avoid","Mitigate","Transfer","Accept"],ans:2,exp:"Risk Transfer shifts the negative impact to a third party. It reassigns ownership, not eliminates the risk."},
+  {id:10,eco:"Process",tag:"Earned Value",type:"factual",q:"SPI = 0.75 means:",opts:["25% ahead of schedule","25% behind schedule","75% complete","On schedule"],ans:1,exp:"SPI = EV/PV = 0.75 — $0.75 of planned work per $1.00 scheduled = 25% behind."},
+  {id:11,eco:"Process",tag:"Schedule",type:"factual",q:"Float (slack) is defined as:",opts:["Total project duration","How long an activity can be delayed without delaying the project","Planned vs actual cost difference","Buffer added to estimates"],ans:1,exp:"Float = LS − ES. Critical path activities have zero float."},
+  {id:12,eco:"Process",tag:"Earned Value",type:"factual",q:"BAC=$200k, CPI=0.80. EAC using current CPI?",opts:["$160,000","$200,000","$250,000","$240,000"],ans:2,exp:"EAC = BAC/CPI = $200k/0.80 = $250,000. Project expected to cost $50k more."},
+  {id:13,eco:"Process",tag:"Scope",type:"factual",q:"Gold plating refers to:",opts:["Exceeding quality standards","Adding features beyond scope without authorization","Using premium vendors","Padding the budget"],ans:1,exp:"Gold plating = unrequested scope additions. Scope creep even when well-intentioned."},
+  {id:14,eco:"Process",tag:"Risk",type:"factual",q:"A risk register PRIMARILY contains:",opts:["Project budget details","Identified risks and response plans","Team performance reviews","Stakeholder contacts"],ans:1,exp:"The risk register documents risks, probability, impact, owners, and response strategies."},
+  {id:15,eco:"Process",tag:"Schedule",type:"factual",q:"Fast tracking means:",opts:["Adding more resources","Performing sequential activities in parallel","Removing non-critical activities","Reducing scope"],ans:1,exp:"Fast tracking overlaps phases normally done sequentially. Increases risk but compresses schedule."},
+  {id:16,eco:"Process",tag:"Quality",type:"factual",q:"RACI stands for:",opts:["Responsible, Accountable, Consulted, Informed","Required, Available, Committed, Identified","Reviewed, Approved, Controlled, Initiated","Responsive, Active, Compliant, Involved"],ans:0,exp:"RACI: Responsible (does work), Accountable (owns outcome), Consulted (input), Informed (in loop)."},
+  {id:17,eco:"Process",tag:"Risk",type:"factual",q:"Monte Carlo simulation is used to:",opts:["Identify stakeholder risks","Model schedule/cost uncertainty probabilistically","Create the risk register","Develop the WBS"],ans:1,exp:"Monte Carlo runs thousands of simulations to model the probability distribution of project outcomes."},
+  {id:18,eco:"Process",tag:"Earned Value",type:"factual",q:"TCPI > 1.0 means:",opts:["Project is under budget","Future work must be done more efficiently than planned","Project will finish early","Future work can be less efficient"],ans:1,exp:"TCPI > 1.0 = remaining work must be more efficient than originally planned."},
+  {id:19,eco:"Process",tag:"Schedule",type:"factual",q:"Resource leveling typically results in:",opts:["Shorter schedule","Longer schedule","Reduced project cost","Increased scope"],ans:1,exp:"Resource leveling smooths resource usage by delaying activities, often extending the schedule."},
+  {id:20,eco:"Process",tag:"Earned Value",type:"factual",q:"EV=$60k, PV=$80k, AC=$55k. Schedule Variance (SV)?",opts:["+$20k","-$20k","+$5k","-$5k"],ans:1,exp:"SV = EV − PV = $60k − $80k = −$20k. Negative = behind schedule."},
+  {id:21,eco:"Process",tag:"Scope",type:"factual",q:"Customer requests out-of-scope change. PM does FIRST?",opts:["Implement immediately","Reject the change","Submit a change request","Inform the sponsor"],ans:2,exp:"All changes go through Integrated Change Control starting with a formal change request — no matter how small."},
+  {id:22,eco:"Process",tag:"Quality",type:"factual",q:"Control chart shows points outside control limits. This indicates:",opts:["Normal process variation","Process is in control","Assignable (special) cause variation","Random variation only"],ans:2,exp:"Points outside control limits signal assignable cause variation — investigate and apply corrective action."},
+  {id:23,eco:"Process",tag:"Procurement",type:"factual",q:"An RFP solicits:",opts:["Work definitions only","Detailed vendor proposals","Cost estimates only","Team assignments"],ans:1,exp:"An RFP (Request for Proposal) asks vendors how they'll accomplish the work and at what cost."},
+  {id:24,eco:"Process",tag:"Stakeholders",type:"factual",q:"Stakeholder has HIGH power but LOW interest. Strategy?",opts:["Manage closely","Keep informed","Keep satisfied","Monitor"],ans:2,exp:"High power/Low interest = Keep Satisfied. They have authority but aren't engaged — keep them happy."},
+  {id:25,eco:"People",tag:"Team Development",type:"factual",q:"Tuckman's team development stages in correct order:",opts:["Forming, Norming, Storming, Performing","Forming, Storming, Norming, Performing, Adjourning","Storming, Forming, Norming, Performing","Forming, Performing, Storming, Norming"],ans:1,exp:"Forming → Storming → Norming → Performing → Adjourning. Teams must resolve Storming to reach peak performance."},
+  {id:26,eco:"People",tag:"Leadership",type:"factual",q:"Which conflict resolution mode is generally MOST effective?",opts:["Avoiding","Forcing","Smoothing","Collaborating (problem solving)"],ans:3,exp:"Collaborating creates the most durable resolutions by addressing root causes. Avoiding is generally least effective."},
+  {id:27,eco:"People",tag:"Motivation",type:"factual",q:"According to Herzberg, which is a MOTIVATOR (not a hygiene factor)?",opts:["Salary","Job security","Achievement and recognition","Working conditions"],ans:2,exp:"Motivators (achievement, recognition, growth) drive actual satisfaction. Hygiene factors (salary, security) only prevent dissatisfaction."},
+  {id:28,eco:"People",tag:"Leadership",type:"factual",q:"A servant leader PRIMARILY:",opts:["Directs team tasks","Sets all priorities","Enables and empowers the team","Reports to senior management"],ans:2,exp:"Servant leaders prioritize team needs — removing obstacles, coaching, and creating conditions for success."},
+  {id:29,eco:"People",tag:"Communication",type:"factual",q:"Most effective communication method for complex sensitive issues:",opts:["Email","Written report","Face-to-face","Instant messaging"],ans:2,exp:"Face-to-face is most effective for complex or sensitive issues because it includes tone, body language, and immediate feedback."},
+  {id:30,eco:"People",tag:"Team Development",type:"factual",q:"McGregor's Theory X assumes workers are:",opts:["Self-motivated and seek responsibility","Lazy and need close supervision","Driven by achievement","Creative problem solvers"],ans:1,exp:"Theory X: workers are lazy and must be controlled. Theory Y: self-motivated and seek responsibility. Theory Y aligns with modern PM."},
+  {id:31,eco:"People",tag:"Virtual Teams",type:"factual",q:"The BIGGEST challenge for virtual project teams is:",opts:["Technology compatibility","Communication and trust building","Budget management","Schedule differences"],ans:1,exp:"Communication and trust building are the greatest virtual team challenges without face-to-face interaction."},
+  {id:32,eco:"People",tag:"Emotional Intelligence",type:"factual",q:"Emotional intelligence in a PM PRIMARILY helps with:",opts:["Schedule compression","Stakeholder and team relationships","Cost estimation","Risk identification"],ans:1,exp:"Emotional intelligence — self-awareness, empathy, and social skills — directly improves relationships with stakeholders and team members."},
+  {id:33,eco:"People",tag:"Motivation",type:"factual",q:"Maslow's hierarchy of needs from LOWEST to HIGHEST:",opts:["Safety, Physiological, Social, Esteem, Self-actualization","Physiological, Safety, Social, Esteem, Self-actualization","Social, Safety, Physiological, Self-actualization, Esteem","Esteem, Social, Safety, Physiological, Self-actualization"],ans:1,exp:"Physiological → Safety → Social → Esteem → Self-actualization. Lower needs must be met before higher ones motivate."},
+  {id:34,eco:"People",tag:"Leadership",type:"factual",q:"Situational leadership means a PM should:",opts:["Always use the same leadership style","Adapt leadership style to team member's maturity and task","Let members choose their preferred style","Delegate all decisions to the team"],ans:1,exp:"Effective leaders adapt their style (directing, coaching, supporting, delegating) based on follower competence and commitment."},
+  {id:35,eco:"People",tag:"Negotiation",type:"factual",q:"Win-win negotiation focuses on:",opts:["One party getting everything","Splitting the difference","Meeting underlying interests of both parties","Avoiding negotiation altogether"],ans:2,exp:"Win-win (integrative) negotiation focuses on underlying interests, not stated positions — finding solutions that satisfy both parties."},
+  {id:36,eco:"People",tag:"Team Development",type:"factual",q:"'Storming' stage is characterized by:",opts:["Polite introductions and enthusiasm","Conflict, power struggles, and pushback","Smooth collaboration and high productivity","Wrapping up and disbanding"],ans:1,exp:"Storming = conflict phase. Team members challenge each other. Healthy teams work through it to reach Norming and Performing."},
+  {id:37,eco:"People",tag:"Communication",type:"factual",q:"Active listening PRIMARILY involves:",opts:["Taking extensive notes","Responding immediately with solutions","Full attention, clarifying questions, and reflecting back","Preparing your response while the other person speaks"],ans:2,exp:"Active listening means full attention, no interrupting, reflecting back what was heard, and asking clarifying questions."},
+  {id:38,eco:"People",tag:"Leadership",type:"factual",q:"Best leadership style for a new, inexperienced team member on a complex task:",opts:["Delegating","Supporting","Coaching","Directing"],ans:3,exp:"Directing is appropriate for low competence/high commitment. As competence grows: Coach → Support → Delegate."},
+  {id:39,eco:"People",tag:"Conflict",type:"scenario",scenario:"Two senior developers have a heated technical disagreement about system architecture, ongoing for two weeks and slowing sprint progress. Both are highly skilled.",q:"BEST first approach?",opts:["Force a decision — pick one solution","Let them figure it out — they're seniors","Facilitate a structured technical discussion focused on project requirements and trade-offs","Escalate to the technical director"],ans:2,exp:"Collaborating is most effective. Facilitate a discussion focused on project needs and objective criteria — not personalities."},
+  {id:40,eco:"People",tag:"Team Development",type:"scenario",scenario:"You take over a project mid-way. The team is disengaged, misses deadlines, barely communicates. The previous PM was autocratic and micromanaged everything.",q:"What do you do FIRST to rebuild team performance?",opts:["Set strict new deadlines immediately to signal accountability","Hold one-on-ones to understand each person's perspective and rebuild trust","Restructure the team completely","Report poor performance to senior management"],ans:1,exp:"Rebuilding trust through one-on-ones is the critical first step. Understand root causes before taking corrective action."},
+  {id:41,eco:"People",tag:"Motivation",type:"scenario",scenario:"A high-performing team member feels unchallenged and bored. They haven't received a raise in two years and are considering leaving.",q:"According to Herzberg, what should you address FIRST?",opts:["Give them a raise immediately to prevent departure","Assign more challenging work and growth opportunities","Address both simultaneously","Let them decide on their own"],ans:1,exp:"Per Herzberg, growth and challenging work are motivators that drive engagement. The raise is a hygiene factor. Address the motivator first — then escalate compensation."},
+  {id:42,eco:"People",tag:"Leadership",type:"scenario",scenario:"You are leading a team of highly experienced senior professionals with deep domain expertise who are highly self-motivated.",q:"Which leadership style is MOST appropriate?",opts:["Directing — you must maintain control","Coaching — they need guidance on approach","Supporting — provide encouragement when needed","Delegating — they are competent and committed"],ans:3,exp:"Situational leadership: high competence + high commitment = Delegating. Experienced, self-motivated professionals perform best with autonomy."},
+  {id:43,eco:"Business Environment",tag:"Benefits Realization",type:"factual",q:"Benefits realization management focuses on:",opts:["Delivering project outputs on time","Ensuring outcomes deliver expected business benefits beyond project closure","Managing project costs","Identifying project risks"],ans:1,exp:"Benefits realization tracks whether intended business value is actually achieved — often measured months after project closure."},
+  {id:44,eco:"Business Environment",tag:"Governance",type:"factual",q:"A business case PRIMARILY justifies:",opts:["The PM's authority","Project investment by outlining expected benefits, costs, risks, and strategic alignment","The project schedule","Resource requirements"],ans:1,exp:"The business case is the key document justifying project investment. It is a living document updated at key decision gates."},
+  {id:45,eco:"Business Environment",tag:"Compliance",type:"factual",q:"Enterprise Environmental Factors (EEFs) are:",opts:["Policies created by the project team","External/internal conditions that influence but are not controlled by the project team","Tools used for project planning","Lessons learned from previous projects"],ans:1,exp:"EEFs include market conditions, regulations, organizational culture — factors the team must consider but cannot change."},
+  {id:46,eco:"Business Environment",tag:"Strategy",type:"factual",q:"A project is BEST aligned to organizational strategy when:",opts:["It has the lowest cost","It delivers outputs that advance the organization's strategic objectives","It completes fastest","It has the fewest risks"],ans:1,exp:"Strategic alignment means the project's outcomes contribute to the organization's goals and priorities."},
+  {id:47,eco:"Business Environment",tag:"Governance",type:"factual",q:"The project sponsor's PRIMARY role is to:",opts:["Manage day-to-day project activities","Champion the project, provide funding, and remove organizational obstacles","Approve all change requests","Assign team members"],ans:1,exp:"The sponsor owns the business case, funds the project, and uses organizational authority to remove impediments the PM cannot resolve."},
+  {id:48,eco:"Business Environment",tag:"Compliance",type:"factual",q:"When a new regulation impacts your project, you should FIRST:",opts:["Ignore it — legal will handle it","Cancel the project","Assess the impact and update the risk register and change log","Immediately escalate to the board"],ans:2,exp:"Regulatory changes are external risks. Assess impact, update risk register, submit change requests if needed."},
+  {id:49,eco:"Business Environment",tag:"Benefits Realization",type:"factual",q:"A project delivers all planned outputs but the business benefit is never realized. MOST likely because:",opts:["The PM made errors","The project was over budget","Outputs didn't lead to required outcomes and organizational adoption","The team was inexperienced"],ans:2,exp:"Outputs ≠ Outcomes ≠ Benefits. Technical delivery without adoption fails to generate value."},
+  {id:50,eco:"Business Environment",tag:"Strategy",type:"factual",q:"During project closure, lessons learned PRIMARILY contribute to:",opts:["The project team's bonuses","Organizational Process Assets for future projects","The final project report only","Stakeholder satisfaction"],ans:1,exp:"Lessons learned are stored as OPAs — institutional knowledge that improves future project performance."},
+  {id:51,eco:"Business Environment",tag:"Benefits Realization",type:"scenario",scenario:"Your project delivered a new CRM system on time, on budget, meeting all technical requirements. Six months after launch, customer satisfaction hasn't improved and the sales team rarely uses it.",q:"What was MOST likely missing from the project approach?",opts:["Better project management","Stronger technical requirements","Change management and user adoption planning","More budget"],ans:2,exp:"Technical delivery without change management fails to realize benefits. Adoption planning, training, and stakeholder engagement are essential."},
+  {id:52,eco:"Business Environment",tag:"Governance",type:"scenario",scenario:"Halfway through your project, the organization announces a major strategic shift. Your project's deliverables now have limited alignment with the new strategy. The sponsor still wants to continue.",q:"What should the PM do?",opts:["Continue as planned — the sponsor wants to proceed","Immediately cancel the project","Re-evaluate the business case in light of the new strategy and present findings to leadership","Reduce the project scope to save money"],ans:2,exp:"When strategy changes, re-evaluate the business case. Present continuation, pivot, or termination options to leadership — don't decide unilaterally."},
+  {id:53,eco:"Process",tag:"Scope",type:"scenario",scenario:"Three months into a 12-month project. A senior stakeholder informally requests an additional module not in scope, insisting it's small and needs no formal approval.",q:"What do you do FIRST?",opts:["Add it — stakeholder is senior","Reject — not in scope","Log it as a change request and submit to the CCB","Estimate effort before deciding"],ans:2,exp:"All scope changes must go through Integrated Change Control with a formal change request — no matter how small."},
+  {id:54,eco:"Process",tag:"Earned Value",type:"scenario",scenario:"Month 6 of 12: BAC=$1M, PV=$500k, EV=$400k, AC=$480k. Sponsor asks for a forecast.",q:"What is the EAC and what does it tell you?",opts:["EAC=$1.2M — project will be over budget","EAC=$1.1M — project is on track","EAC=$900k — project will be under budget","EAC=$1M — no change expected"],ans:0,exp:"CPI = EV/AC = $400k/$480k = 0.833. EAC = $1M/0.833 ≈ $1.2M. Trending $200k over budget if performance doesn't improve."},
+  {id:55,eco:"Process",tag:"Schedule",type:"scenario",scenario:"Project is 2 weeks behind with 8 weeks remaining. Fixed client deadline. Crashing costs $50k extra. Fast-tracking increases rework risk 30%.",q:"What do you FIRST present to the sponsor?",opts:["Crash the schedule immediately","Fast-track all remaining activities","Present both options with cost/risk trade-offs and get direction","Request a deadline extension"],ans:2,exp:"The PM's job is to present options with trade-offs, not unilaterally decide. Let the sponsor choose based on priorities."},
+  {id:56,eco:"Process",tag:"Integration",type:"scenario",scenario:"During execution, a team lead has been approving minor scope changes informally without change requests. Several deliverables have quietly expanded.",q:"What do you do FIRST?",opts:["Reprimand the team lead publicly","Document changes and submit retroactive change requests","Ignore it — work is done","Immediately inform the sponsor of all changes"],ans:1,exp:"First formalize unauthorized changes through retroactive change requests. Then coach the team lead to prevent recurrence."},
+  {id:57,eco:"Process",tag:"Stakeholders",type:"scenario",scenario:"Two senior stakeholders with equal authority conflict: one wants a real-time dashboard, the other a weekly PDF report.",q:"Best approach?",opts:["Build both and let them choose","Flip a coin","Facilitate a meeting between both stakeholders to reach consensus","Escalate to the project sponsor to decide"],ans:2,exp:"Facilitate consensus first. Conflicting requests often reflect the same underlying need. Escalate only if consensus fails."},
+  {id:58,eco:"Process",tag:"Quality",type:"scenario",scenario:"Testing reveals defect rates 3x above acceptable threshold. Deadline is 6 weeks away. Dev manager says 'ship and patch post-launch.'",q:"What should the PM do?",opts:["Agree — customers expect patches","Reject shipping until defects are fixed","Perform cost-benefit analysis and present options to the sponsor","Ask team to work weekends to fix defects"],ans:2,exp:"The PM surfaces trade-offs — delay to fix, ship with known defects, or descope — and lets the sponsor decide with full information."},
+  {id:59,eco:"Process",tag:"Risk",type:"scenario",scenario:"An unknown risk materializes during execution. It will cost $80k and delay 3 weeks. Your contingency reserve is $120k.",q:"What should you do?",opts:["Use contingency reserve and inform the sponsor","Ask the sponsor for additional funding","Do nothing — unknown risks can't be planned for","Implement a workaround and document it"],ans:3,exp:"Workarounds are unplanned responses to previously unidentified risks. Implement it, document it, update the risk register, and inform the sponsor."},
+];
 
-function loadSR(){ try{return JSON.parse(localStorage.getItem('pmp_sr')||'{}')}catch{return{}} }
-function saveSR(sr){ try{localStorage.setItem('pmp_sr',JSON.stringify(sr))}catch{} }
+const TOTAL_PREP=45,MAX_WRONG=14,EXAM_MIN=60;
+const ECO_DOMAINS=["Process","People","Business Environment"];
+const DOMAIN_COLORS={"Process":"#8549ba","People":"#1D9E75","Business Environment":"#185fa5"};
 
-function getSRQueue(sr, count){
-  const now = Date.now();
-  const scored = ALL_Q.map(q=>{
-    const r = sr[q.id]||{interval:0,ef:2.5,due:0,wrong:0};
-    return {q, overdue:now-r.due, isNew:!sr[q.id], wrong:r.wrong||0};
-  });
-  scored.sort((a,b)=>{
-    if(a.isNew!==b.isNew) return a.isNew?1:-1;
-    if(b.wrong!==a.wrong) return b.wrong-a.wrong;
-    return b.overdue-a.overdue;
-  });
+const FORMULAS=[
+  {cat:"Earned Value Management",items:[
+    {name:"Cost Performance Index (CPI)",formula:"CPI = EV ÷ AC",explain:"Measures cost efficiency. CPI < 1 = over budget. CPI > 1 = under budget.",example:"EV=$40k, AC=$50k → CPI=0.80 (over budget)",tip:"EV always in the numerator for both CPI and SPI."},
+    {name:"Schedule Performance Index (SPI)",formula:"SPI = EV ÷ PV",explain:"Measures schedule efficiency. SPI < 1 = behind schedule.",example:"EV=$40k, PV=$50k → SPI=0.80 (behind schedule)",tip:"SPI < 1 = late. SPI > 1 = ahead."},
+    {name:"Cost Variance (CV)",formula:"CV = EV − AC",explain:"Negative CV = over budget. Positive = under budget.",example:"EV=$40k, AC=$50k → CV=−$10k",tip:"Negative is bad for cost."},
+    {name:"Schedule Variance (SV)",formula:"SV = EV − PV",explain:"Negative SV = behind schedule. Positive = ahead.",example:"EV=$40k, PV=$50k → SV=−$10k",tip:"EV − PV. Negative = late."},
+    {name:"Estimate at Completion (EAC)",formula:"EAC = BAC ÷ CPI",explain:"Forecast of total project cost if current performance continues.",example:"BAC=$100k, CPI=0.80 → EAC=$125k",tip:"Most common EAC formula on the PMP exam."},
+    {name:"Estimate to Complete (ETC)",formula:"ETC = EAC − AC",explain:"How much more money is needed to finish the project.",example:"EAC=$125k, AC=$50k → ETC=$75k remaining",tip:"ETC = what's left to spend."},
+    {name:"Variance at Completion (VAC)",formula:"VAC = BAC − EAC",explain:"Expected over/under budget at project end. Negative = over budget.",example:"BAC=$100k, EAC=$125k → VAC=−$25k",tip:"VAC negative = bad news for the sponsor."},
+    {name:"To-Complete Performance Index (TCPI)",formula:"TCPI = (BAC − EV) ÷ (BAC − AC)",explain:"Efficiency needed for remaining work to meet BAC. > 1.0 = harder than planned.",example:"BAC=$100k, EV=$40k, AC=$50k → TCPI=1.20",tip:"TCPI > 1 means you must work more efficiently than before."},
+  ]},
+  {cat:"Schedule & Network",items:[
+    {name:"Communication Channels",formula:"n(n−1) ÷ 2",explain:"Total two-way communication channels for a group of n people.",example:"10 stakeholders → 10×9÷2 = 45 channels",tip:"Adding just one person creates n new channels — it scales fast."},
+    {name:"Float / Slack",formula:"Float = LS − ES  (or LF − EF)",explain:"How long an activity can be delayed without affecting the project end date.",example:"ES=Day 5, LS=Day 8 → Float=3 days",tip:"Critical path activities always have Float = 0."},
+    {name:"PERT Estimate",formula:"(O + 4M + P) ÷ 6",explain:"Weighted average of Optimistic, Most Likely (×4), and Pessimistic estimates.",example:"O=4, M=6, P=14 → (4+24+14)÷6 = 7 days",tip:"PERT gives more weight (×4) to the Most Likely estimate."},
+    {name:"PERT Standard Deviation",formula:"σ = (P − O) ÷ 6",explain:"Measures the uncertainty in a PERT estimate.",example:"O=4, P=14 → σ=(14−4)÷6 = 1.67 days",tip:"68% of outcomes fall within ±1σ, 95% within ±2σ."},
+  ]},
+  {cat:"Risk",items:[
+    {name:"Expected Monetary Value (EMV)",formula:"EMV = Probability × Impact",explain:"Quantifies a risk in dollar terms. Used in decision tree analysis.",example:"30% probability × $100,000 impact = $30,000 EMV",tip:"Sum all EMVs in a decision tree to compare options."},
+  ]},
+  {cat:"Quality",items:[
+    {name:"Cost of Quality (CoQ)",formula:"CoQ = Prevention + Appraisal + Internal Failure + External Failure",explain:"Total cost of achieving (and failing to achieve) quality.",example:"Prevention=$10k + Appraisal=$5k + Failures=$20k → CoQ=$35k",tip:"More investment in prevention reduces total CoQ long-term."},
+    {name:"Rule of Seven",formula:"7 consecutive points on one side = out of control",explain:"Even within control limits, a run of 7 signals a systemic shift in the process.",example:"7 points all above the mean → investigate the process",tip:"Also applies to 6 consecutive increases or decreases (trending)."},
+  ]},
+];
+
+const ACHIEVEMENTS=[
+  {id:"first_q",icon:"🌱",name:"First step",desc:"Answer your first question",check:s=>s.totalAnswered>=1},
+  {id:"first_correct",icon:"✅",name:"On the board",desc:"Get your first correct answer",check:s=>s.totalCorrect>=1},
+  {id:"streak3",icon:"🔥",name:"On fire",desc:"Complete 3 sessions in a row",check:s=>s.streak>=3},
+  {id:"streak7",icon:"⚡",name:"Week warrior",desc:"7-day streak",check:s=>s.streak>=7},
+  {id:"perfect_practice",icon:"🎯",name:"Perfect practice",desc:"Score 100% on a Practice session",check:s=>s.perfectSessions>=1},
+  {id:"pass_prep",icon:"📋",name:"Exam ready",desc:"Pass your first Prep exam",check:s=>s.prepPassed>=1},
+  {id:"pass_prep3",icon:"🏆",name:"Triple threat",desc:"Pass 3 Prep exams",check:s=>s.prepPassed>=3},
+  {id:"mastered10",icon:"🧠",name:"Memory master",desc:"Master 10 SR cards",check:s=>s.mastered>=10},
+  {id:"mastered30",icon:"💡",name:"Knowledge bank",desc:"Master 30 SR cards",check:s=>s.mastered>=30},
+  {id:"scenario10",icon:"🎭",name:"Situational thinker",desc:"Answer 10 scenario questions correctly",check:s=>s.scenarioCorrect>=10},
+  {id:"people5",icon:"🤝",name:"People person",desc:"Answer 5 People domain questions correctly",check:s=>s.peopleCorrect>=5},
+  {id:"biz5",icon:"🏢",name:"Business minded",desc:"Answer 5 Business Environment questions correctly",check:s=>s.bizCorrect>=5},
+  {id:"glossary_quiz10",icon:"📖",name:"Word quiz warrior",desc:"Answer 10 glossary quiz questions correctly",check:s=>s.glossaryQuizCorrect>=10},
+  {id:"glossary_flip10",icon:"🃏",name:"Card flipper",desc:"Flip 10 glossary cards",check:s=>s.glossaryFlipped>=10},
+  {id:"glossary_all",icon:"🦉",name:"PMP Owl",desc:"Flip every glossary card",check:s=>s.glossaryFlipped>=GLOSSARY.length},
+  {id:"bookmarks5",icon:"🔖",name:"Study collector",desc:"Bookmark 5 questions",check:s=>s.bookmarkCount>=5},
+  {id:"xp500",icon:"⭐",name:"Rising star",desc:"Earn 500 XP",check:s=>s.xp>=500},
+  {id:"xp2000",icon:"🌟",name:"PMP star",desc:"Earn 2000 XP",check:s=>s.xp>=2000},
+  {id:"sessions10",icon:"📅",name:"Consistent",desc:"Complete 10 study sessions",check:s=>s.totalSessions>=10},
+  {id:"formula_open",icon:"📐",name:"Formula fan",desc:"Open the formula sheet",check:s=>s.openedFormulas>=1},
+  {id:"due_cleared",icon:"⏰",name:"On schedule",desc:"Clear a Due Now session",check:s=>s.dueCleared>=1},
+];
+
+/* ── STORAGE ── */
+function loadData(k,d){try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch{return d}}
+function saveData(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+function loadSR(){return loadData('pmp_sr_v8',{})}
+function saveSR(sr){saveData('pmp_sr_v8',sr)}
+function loadHistory(){return loadData('pmp_hist_v8',[])}
+function saveHistory(h){saveData('pmp_hist_v8',h.slice(-30))}
+function loadBookmarks(){return loadData('pmp_bm_v8',[])}
+function saveBookmarks(b){saveData('pmp_bm_v8',b)}
+function loadStats(){return loadData('pmp_stats_v8',{xp:0,streak:0,totalAnswered:0,totalCorrect:0,totalSessions:0,prepPassed:0,perfectSessions:0,scenarioCorrect:0,peopleCorrect:0,bizCorrect:0,mastered:0,bookmarkCount:0,openedFormulas:0,dueCleared:0,glossaryFlipped:0,glossaryQuizCorrect:0,earnedAchievements:[]})}
+function saveStats(st){saveData('pmp_stats_v8',st)}
+
+function exportProgress(){
+  const data={sr:loadSR(),history:loadHistory(),bookmarks:loadBookmarks(),stats:loadStats(),version:8};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='pmp-quest-backup-v8.json';a.click();URL.revokeObjectURL(url);showToast('Progress exported!');
+}
+function importProgress(){
+  const input=document.createElement('input');input.type='file';input.accept='.json';
+  input.onchange=e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>{try{const data=JSON.parse(ev.target.result);if(data.sr)saveData('pmp_sr_v8',data.sr);if(data.history)saveData('pmp_hist_v8',data.history);if(data.bookmarks)saveData('pmp_bm_v8',data.bookmarks);if(data.stats)saveData('pmp_stats_v8',data.stats);S.sr=loadSR();S.history=loadHistory();S.bookmarks=loadBookmarks();S.stats=loadStats();showToast('Progress imported! ✓');render();}catch{showToast('Invalid backup file');}};reader.readAsText(file);};input.click();
+}
+
+/* ── SR ENGINE ── */
+function getSRDue(sr){const now=Date.now();return ALL_Q.filter(q=>{const r=sr[q.id];return r&&r.due<=now;});}
+function getSRQueue(sr,count){
+  const now=Date.now();
+  const scored=ALL_Q.map(q=>{const r=sr[q.id]||{interval:0,ef:2.5,due:0,wrong:0};return{q,overdue:now-r.due,isNew:!sr[q.id],wrong:r.wrong||0};});
+  scored.sort((a,b)=>{if(a.isNew!==b.isNew)return a.isNew?1:-1;if(b.wrong!==a.wrong)return b.wrong-a.wrong;return b.overdue-a.overdue;});
   return scored.slice(0,count).map(s=>s.q);
 }
-
 function updateSR(sr,qid,correct){
-  const r = sr[qid]||{interval:0,ef:2.5,due:0,wrong:0};
-  if(correct){
-    r.interval = r.interval===0?1:r.interval===1?3:Math.round(r.interval*r.ef);
-    r.ef = Math.max(1.3, r.ef+0.1);
-    r.due = Date.now()+r.interval*86400000;
-  } else {
-    r.interval=0; r.ef=Math.max(1.3,r.ef-0.2);
-    r.due=Date.now()+3600000; r.wrong=(r.wrong||0)+1;
-  }
-  sr[qid]=r; return sr;
+  const r=sr[qid]||{interval:0,ef:2.5,due:0,wrong:0};
+  if(correct){r.interval=r.interval===0?1:r.interval===1?3:Math.round(r.interval*r.ef);r.ef=Math.max(1.3,r.ef+0.1);r.due=Date.now()+r.interval*86400000;}
+  else{r.interval=0;r.ef=Math.max(1.3,r.ef-0.2);r.due=Date.now()+3600000;r.wrong=(r.wrong||0)+1;}
+  sr[qid]=r;return sr;
+}
+function getSRStats(sr){return{seen:Object.keys(sr).length,mastered:Object.values(sr).filter(r=>r.interval>=7).length,dueNow:getSRDue(sr).length};}
+function weightedShuffle(qs,sr){
+  const now=Date.now();
+  return qs.map(q=>{const r=sr[q.id];let w=1;if(!r)w=2;else if(r.wrong>1)w=5;else if(r.interval<3)w=3;else if(r.due<=now)w=4;return{q,sort:Math.random()*w};}).sort((a,b)=>b.sort-a.sort).map(x=>x.q);
 }
 
-function getSRStats(sr){
-  return {
-    seen: Object.keys(sr).length,
-    mastered: Object.values(sr).filter(r=>r.interval>=7).length,
-    dueNow: Object.entries(sr).filter(([,r])=>r.due<=Date.now()).length
-  };
+/* ── ACHIEVEMENTS ── */
+function checkAchievements(stats){
+  const n=[];
+  ACHIEVEMENTS.forEach(a=>{if(!stats.earnedAchievements.includes(a.id)&&a.check(stats)){stats.earnedAchievements.push(a.id);n.push(a);}});
+  return n;
 }
 
-let radarChart = null;
-let S = {
-  screen:'home', xp:120, streak:5,
-  mode:null, questions:[], current:0, selected:null, answered:false,
-  wrong:0, correct:0, wrongItems:[], domainStats:{},
-  timerSec:EXAM_MIN*60, timerInt:null, startTime:null,
-  failed:false, failReason:null, sr:loadSR()
+/* ── GLOSSARY QUIZ ── */
+function buildGlossaryQuiz(filterCat){
+  const pool=filterCat==='All'?[...GLOSSARY]:GLOSSARY.filter(g=>g.cat===filterCat);
+  if(pool.length<4)return null;
+  const shuffled=[...pool].sort(()=>Math.random()-.5);
+  return shuffled.slice(0,Math.min(15,pool.length)).map(g=>{
+    const wrong=[...pool].filter(x=>x.term!==g.term).sort(()=>Math.random()-.5).slice(0,3).map(x=>x.def);
+    const opts=[g.def,...wrong].sort(()=>Math.random()-.5);
+    return{term:g.term,cat:g.cat,def:g.def,opts,ans:opts.indexOf(g.def)};
+  });
+}
+
+/* ── STATE ── */
+let radarChart=null;
+let S={
+  screen:'home',tab:'home',
+  mode:null,questions:[],current:0,selected:null,answered:false,
+  wrong:0,correct:0,wrongItems:[],domainStats:{},
+  timerSec:EXAM_MIN*60,timerInt:null,startTime:null,
+  failed:false,failReason:null,
+  sr:loadSR(),history:loadHistory(),bookmarks:loadBookmarks(),stats:loadStats(),
+  formulaOpen:{},
+  glossarySubscreen:'menu',
+  glossaryFilter:'All',
+  glossaryFlipped:{},
+  glossaryQuiz:[],glossaryQuizCurrent:0,glossaryQuizSelected:null,glossaryQuizAnswered:false,glossaryQuizCorrect:0,
 };
 
-function shuffle(a){ return [...a].sort(()=>Math.random()-.5); }
-function stopTimer(){ if(S.timerInt){clearInterval(S.timerInt);S.timerInt=null;} }
-function fmt(s){ return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+function shuffle(a){return[...a].sort(()=>Math.random()-.5);}
+function stopTimer(){if(S.timerInt){clearInterval(S.timerInt);S.timerInt=null;}}
+function fmt(s){const m=Math.floor(s/60);return m+':'+String(s%60).padStart(2,'0');}
+function initDS(qs){const ds={};ECO_DOMAINS.forEach(d=>ds[d]={correct:0,total:0});qs.forEach(q=>{if(ds[q.eco])ds[q.eco].total++;});return ds;}
 
-function initDS(qs){
-  const ds={};
-  DOMAINS.forEach(d=>ds[d]={correct:0,total:0});
-  qs.forEach(q=>ds[q.domain]&&ds[q.domain].total++);
-  return ds;
-}
-
-function startPrep(){
-  stopTimer();
-  const qs=shuffle(ALL_Q).slice(0,TOTAL_PREP);
-  S={...S,screen:'quiz',mode:'prep',questions:qs,current:0,selected:null,answered:false,
-    wrong:0,correct:0,wrongItems:[],domainStats:initDS(qs),
-    timerSec:EXAM_MIN*60,failed:false,failReason:null,startTime:Date.now()};
-  S.timerInt=setInterval(()=>{
-    S.timerSec--;
-    if(S.timerSec<=0){stopTimer();S.failed=true;S.failReason='timeout';S.screen='result';}
-    render();
-  },1000);
+/* ── NAVIGATION ── */
+function navTo(tab){
+  if(S.screen==='quiz')return;
+  S.tab=tab;S.screen=tab;
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const nb=document.getElementById('nav-'+tab);if(nb)nb.classList.add('active');
+  if(tab==='formulas'&&!S.stats.openedFormulas){S.stats.openedFormulas=1;checkAndAward();}
+  if(tab==='glossary')S.glossarySubscreen='menu';
   render();
 }
+function goHome(){stopTimer();S.screen='home';S.tab='home';document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));const nb=document.getElementById('nav-home');if(nb)nb.classList.add('active');render();}
 
-function startSR(){
+/* ── QUIZ MODES ── */
+function startMode(mode,qs){
   stopTimer();
-  const qs=getSRQueue(S.sr,15);
-  if(!qs.length){showToast('All caught up! Check back later.');return;}
-  S={...S,screen:'quiz',mode:'sr',questions:qs,current:0,selected:null,answered:false,
-    wrong:0,correct:0,wrongItems:[],domainStats:initDS(qs),
-    timerSec:0,failed:false,failReason:null,startTime:Date.now()};
+  S={...S,screen:'quiz',mode,questions:qs,current:0,selected:null,answered:false,wrong:0,correct:0,wrongItems:[],domainStats:initDS(qs),timerSec:EXAM_MIN*60,failed:false,failReason:null,startTime:Date.now()};
+  if(mode==='prep'){S.timerInt=setInterval(()=>{S.timerSec--;if(S.timerSec<=0){stopTimer();S.failed=true;S.failReason='timeout';S.screen='result';saveSession();render();}render();},1000);}
   render();
 }
+function startPrep(){startMode('prep',weightedShuffle(ALL_Q,S.sr).slice(0,TOTAL_PREP));}
+function startSR(){const qs=weightedShuffle(getSRQueue(S.sr,20),S.sr);if(!qs.length){showToast('No questions available.');return;}startMode('sr',qs);}
+function startDueNow(){const due=getSRDue(S.sr);if(!due.length){showToast('Nothing due right now!');return;}startMode('due',weightedShuffle(due,S.sr));}
+function startPractice(){startMode('practice',weightedShuffle(ALL_Q,S.sr).slice(0,10));}
+function startScenario(){const qs=weightedShuffle(ALL_Q.filter(q=>q.type==='scenario'),S.sr).slice(0,12);if(!qs.length){showToast('No scenario questions.');return;}startMode('scenario',qs);}
+function startPeople(){const qs=weightedShuffle(ALL_Q.filter(q=>q.eco==='People'),S.sr);if(!qs.length){showToast('No People questions.');return;}startMode('people',qs);}
+function startBiz(){const qs=weightedShuffle(ALL_Q.filter(q=>q.eco==='Business Environment'),S.sr);if(!qs.length){showToast('No Business Env questions.');return;}startMode('biz',qs);}
 
-function startPractice(){
-  stopTimer();
-  const qs=shuffle(ALL_Q).slice(0,10);
-  S={...S,screen:'quiz',mode:'practice',questions:qs,current:0,selected:null,answered:false,
-    wrong:0,correct:0,wrongItems:[],domainStats:initDS(qs),
-    timerSec:0,failed:false,failReason:null,startTime:Date.now()};
-  render();
+/* ── QUIZ ACTIONS ── */
+function selectOpt(i){if(S.answered)return;S.selected=i;render();}
+function toggleBookmark(){
+  const q=S.questions[S.current];const idx=S.bookmarks.findIndex(b=>b.id===q.id);
+  if(idx>=0){S.bookmarks.splice(idx,1);showToast('Bookmark removed');}
+  else{S.bookmarks.push({id:q.id,q:q.q,ans:q.opts[q.ans],domain:q.eco,tag:q.tag,exp:q.exp});showToast('Bookmarked! 🔖');S.stats.bookmarkCount=(S.stats.bookmarkCount||0)+1;}
+  saveBookmarks(S.bookmarks);checkAndAward();render();
 }
-
-function selectOpt(i){ if(S.answered)return; S.selected=i; render(); }
+function removeBookmark(id){S.bookmarks=S.bookmarks.filter(b=>b.id!==id);saveBookmarks(S.bookmarks);render();}
+function isBookmarked(id){return S.bookmarks.some(b=>b.id===id);}
+function toggleFormula(ci,ii){const k=ci+'_'+ii;S.formulaOpen[k]=!S.formulaOpen[k];render();}
+function flipCard(i){S.glossaryFlipped[i]=!S.glossaryFlipped[i];if(S.glossaryFlipped[i]){S.stats.glossaryFlipped=Object.values(S.glossaryFlipped).filter(v=>v).length;checkAndAward();}render();}
+function setGlossaryFilter(f){S.glossaryFilter=f;S.glossaryFlipped={};render();}
+function startGlossaryQuiz(){const q=buildGlossaryQuiz(S.glossaryFilter);if(!q){showToast('Need at least 4 terms in this category.');return;}S.glossaryQuiz=q;S.glossaryQuizCurrent=0;S.glossaryQuizSelected=null;S.glossaryQuizAnswered=false;S.glossaryQuizCorrect=0;S.glossarySubscreen='quiz';render();}
+function selectGlossOpt(i){if(S.glossaryQuizAnswered)return;S.glossaryQuizSelected=i;render();}
+function checkGlossAnswer(){
+  if(S.glossaryQuizSelected===null||S.glossaryQuizAnswered)return;
+  S.glossaryQuizAnswered=true;
+  const q=S.glossaryQuiz[S.glossaryQuizCurrent];
+  if(S.glossaryQuizSelected===q.ans){S.glossaryQuizCorrect++;S.stats.glossaryQuizCorrect=(S.stats.glossaryQuizCorrect||0)+1;S.stats.xp=(S.stats.xp||0)+5;showToast('+5 XP');checkAndAward();}
+  saveStats(S.stats);render();
+}
+function nextGlossQuestion(){if(S.glossaryQuizCurrent<S.glossaryQuiz.length-1){S.glossaryQuizCurrent++;S.glossaryQuizSelected=null;S.glossaryQuizAnswered=false;render();}else{S.glossarySubscreen='quiz_result';render();}}
 
 function check(){
   if(S.selected===null||S.answered)return;
   S.answered=true;
-  const q=S.questions[S.current];
-  const ok=S.selected===q.ans;
+  const q=S.questions[S.current];const ok=S.selected===q.ans;
+  S.stats.totalAnswered=(S.stats.totalAnswered||0)+1;
   if(ok){
-    S.correct++;
-    if(S.domainStats[q.domain]) S.domainStats[q.domain].correct++;
-    if(S.mode!=='practice'){S.xp+=10;showToast('+10 XP');}
+    S.correct++;if(S.domainStats[q.eco])S.domainStats[q.eco].correct++;
+    S.stats.totalCorrect=(S.stats.totalCorrect||0)+1;
+    if(S.mode!=='practice'){S.stats.xp=(S.stats.xp||0)+10;showToast('+10 XP');}
+    if(q.type==='scenario')S.stats.scenarioCorrect=(S.stats.scenarioCorrect||0)+1;
+    if(q.eco==='People')S.stats.peopleCorrect=(S.stats.peopleCorrect||0)+1;
+    if(q.eco==='Business Environment')S.stats.bizCorrect=(S.stats.bizCorrect||0)+1;
   } else {
     S.wrong++;
-    S.wrongItems.push({q:q.q,yourAns:q.opts[S.selected],correct:q.opts[q.ans],exp:q.exp,domain:q.domain});
-    if(S.mode==='prep'&&S.wrong>MAX_WRONG){
-      stopTimer();S.failed=true;S.failReason='wrong';
-      S.sr=updateSR(S.sr,q.id,false);saveSR(S.sr);
-      S.screen='result';render();return;
-    }
+    S.wrongItems.push({q:q.q,yourAns:q.opts[S.selected],correct:q.opts[q.ans],exp:q.exp,domain:q.eco});
+    if(S.mode==='prep'&&S.wrong>MAX_WRONG){stopTimer();S.failed=true;S.failReason='wrong';S.sr=updateSR(S.sr,q.id,false);saveSR(S.sr);saveSession();render();return;}
   }
-  S.sr=updateSR(S.sr,q.id,ok);saveSR(S.sr);
-  render();
+  S.sr=updateSR(S.sr,q.id,ok);saveSR(S.sr);checkAndAward();render();
 }
+function next(){if(S.current<S.questions.length-1){S.current++;S.selected=null;S.answered=false;render();}else{stopTimer();saveSession();S.screen='result';render();}}
 
-function next(){
-  if(S.current<S.questions.length-1){S.current++;S.selected=null;S.answered=false;render();}
-  else{stopTimer();S.screen='result';render();}
+function saveSession(){
+  const total=S.questions.length;const pct=Math.round((S.correct/total)*100);
+  const elapsed=isFinite(S.startTime)?Math.round((Date.now()-S.startTime)/1000):0;
+  const passed=S.mode==='prep'?!S.failed:pct>=70;
+  S.stats.totalSessions=(S.stats.totalSessions||0)+1;
+  if(S.mode==='prep'&&passed)S.stats.prepPassed=(S.stats.prepPassed||0)+1;
+  if(passed&&pct===100&&S.mode==='practice')S.stats.perfectSessions=(S.stats.perfectSessions||0)+1;
+  if(S.mode==='due'&&!S.failed)S.stats.dueCleared=(S.stats.dueCleared||0)+1;
+  S.stats.mastered=Object.values(S.sr).filter(r=>r.interval>=7).length;
+  S.history.unshift({date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}),mode:S.mode,pct,correct:S.correct,total,wrong:S.wrong,elapsed:fmt(elapsed),passed,domainStats:JSON.parse(JSON.stringify(S.domainStats))});
+  saveHistory(S.history);checkAndAward();saveStats(S.stats);
+  if(S.mode==='prep'&&passed)setTimeout(()=>launchConfetti(),400);
+  if(S.mode==='prep'&&!passed)setTimeout(()=>launchFailRain(),300);
 }
-
-function goHome(){ stopTimer();S.screen='home';render(); }
-
-function showToast(t){
-  const e=document.createElement('div');
-  e.className='toast';e.textContent=t;
-  document.body.appendChild(e);
-  setTimeout(()=>e.remove(),1600);
-}
-
-function getSRLabel(qid){
-  const r=S.sr[qid];
-  if(!r) return '<span class="sr-tag sr-new">New</span>';
-  if(r.wrong>1) return '<span class="sr-tag sr-hard">Hard</span>';
-  if(r.interval>=7) return '<span class="sr-tag sr-mastered">Mastered</span>';
-  return '<span class="sr-tag sr-review">Review</span>';
-}
-
+function checkAndAward(){saveStats(S.stats);const nb=checkAchievements(S.stats);saveStats(S.stats);nb.forEach((b,i)=>setTimeout(()=>showBadgeToast(b),i*2400));}
+function showToast(t){const e=document.createElement('div');e.className='toast';e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),1600);}
+function showBadgeToast(badge){const e=document.createElement('div');e.className='badge-toast';e.innerHTML=`<span style="font-size:28px">${badge.icon}</span><div><div style="font-size:11px;font-weight:500;color:var(--text2)">Achievement unlocked!</div><div style="font-size:14px;font-weight:500;color:var(--text)">${badge.name}</div><div style="font-size:12px;color:var(--text2)">${badge.desc}</div></div>`;document.body.appendChild(e);setTimeout(()=>e.remove(),3000);}
+function getSRLabel(qid){const r=S.sr[qid];if(!r)return'<span class="sr-tag sr-new">New</span>';if(r.wrong>1)return'<span class="sr-tag sr-hard">Hard</span>';if(r.interval>=7)return'<span class="sr-tag sr-mastered">Mastered</span>';return'<span class="sr-tag sr-review">Review</span>';}
 function drawRadar(ds){
-  const el=document.getElementById('domainChart');
-  if(!el)return;
-  if(radarChart){radarChart.destroy();}
-  const data=DOMAINS.map(d=>ds[d]&&ds[d].total>0?Math.round((ds[d].correct/ds[d].total)*100):0);
-  radarChart=new Chart(el,{
-    type:'radar',
-    data:{
-      labels:DOMAINS,
-      datasets:[{label:'Score %',data,
-        backgroundColor:'rgba(133,73,186,0.18)',
-        borderColor:'#8549ba',borderWidth:2,
-        pointBackgroundColor:'#8549ba',pointRadius:5
-      }]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      scales:{r:{min:0,max:100,ticks:{stepSize:25,font:{size:10},color:'#888'},
-        grid:{color:'rgba(128,128,128,0.2)'},
-        pointLabels:{font:{size:13,weight:'600'},color:'#666'}}},
-      plugins:{legend:{display:false}}
-    }
-  });
+  const el=document.getElementById('domainChart');if(!el)return;
+  if(radarChart)radarChart.destroy();
+  const data=ECO_DOMAINS.map(d=>ds[d]&&ds[d].total>0?Math.round((ds[d].correct/ds[d].total)*100):0);
+  radarChart=new Chart(el,{type:'radar',data:{labels:ECO_DOMAINS,datasets:[{label:'Score %',data,backgroundColor:'rgba(133,73,186,0.18)',borderColor:'#8549ba',borderWidth:2,pointBackgroundColor:'#8549ba',pointRadius:5}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{min:0,max:100,ticks:{stepSize:25,font:{size:10},color:'#888'},grid:{color:'rgba(128,128,128,0.2)'},pointLabels:{font:{size:12,weight:'600'},color:'#666'}}},plugins:{legend:{display:false}}}});
+}
+function getEcoTag(q){if(q.eco==='People')return'<span class="ptag">People</span>';if(q.eco==='Business Environment')return'<span class="btag">Biz Env</span>';if(q.type==='scenario')return'<span class="stag">Scenario</span>';return'';}
+
+/* ── RENDER HOME ── */
+function renderHome(){
+  const st=getSRStats(S.sr);const stats=S.stats;const earned=stats.earnedAchievements||[];
+  const dueBanner=st.dueNow>0?`<div class="due-banner" onclick="startDueNow()"><div style="font-size:22px">⏰</div><div style="flex:1"><div style="font-size:14px;font-weight:500;color:#633806">${st.dueNow} card${st.dueNow>1?'s':''} due for review</div><div style="font-size:12px;color:#85570a;margin-top:1px">Tap to start your overdue session now</div></div><div style="font-size:18px;color:var(--amber)">→</div></div>`:'';
+  return`<div class="hero"><div style="font-size:56px;line-height:1">🦉</div><div style="font-size:22px;font-weight:500;margin:.5rem 0 .25rem;color:var(--text)">PMP Quest</div><div style="font-size:13px;color:var(--text2)">${ALL_Q.length} questions · ${GLOSSARY.length} glossary terms · ${ACHIEVEMENTS.length} badges</div><div class="hero-pills"><span>🔥 ${stats.streak||0} streak</span><span>⭐ ${stats.xp||0} XP</span><span>🏅 ${earned.length}/${ACHIEVEMENTS.length}</span></div></div>
+<div class="sr-overview"><div style="font-size:13px;font-weight:500;color:var(--text)">Your progress</div><div class="sr-stat-row"><div class="sr-stat"><div class="v">${st.seen}</div><div class="l">Seen</div></div><div class="sr-stat"><div class="v" style="color:var(--purple)">${st.mastered}</div><div class="l">Mastered</div></div><div class="sr-stat"><div class="v" style="color:${st.dueNow>0?'var(--amber)':'var(--text)'}">${st.dueNow}</div><div class="l">Due now</div></div><div class="sr-stat"><div class="v">${S.bookmarks.length}</div><div class="l">Saved</div></div></div></div>
+${dueBanner}
+<div class="mode-list">
+  <div class="mc" onclick="startSR()"><div class="mi" style="background:var(--amber-light)">🧠</div><div style="flex:1"><div class="mt">Smart review <span class="bdg bdg-a">Spaced rep</span></div><div class="ms">20 Qs · weak &amp; overdue cards weighted first</div></div><span style="font-size:13px;color:var(--text2)">→</span></div>
+  <div class="mc" onclick="startPrep()"><div class="mi" style="background:var(--purple-light)">📝</div><div style="flex:1"><div class="mt">Prep exam <span class="bdg bdg-r">Hard</span></div><div class="ms">45 Qs · 60-min timer · fail if >14 wrong · animations</div></div><span style="font-size:13px;color:var(--text2)">→</span></div>
+  <div class="mc" onclick="startScenario()"><div class="mi" style="background:#e6f1fb">🎭</div><div style="flex:1"><div class="mt">Scenario drill <span class="bdg bdg-b">Situational</span></div><div class="ms">12 Qs · real PMP multi-paragraph scenarios</div></div><span style="font-size:13px;color:var(--text2)">→</span></div>
+  <div class="mc" onclick="startPeople()"><div class="mi" style="background:#e1f5ee">🤝</div><div style="flex:1"><div class="mt">People domain <span class="bdg bdg-g">ECO 42%</span></div><div class="ms">Leadership · conflict · motivation · EI · virtual teams</div></div><span style="font-size:13px;color:var(--text2)">→</span></div>
+  <div class="mc" onclick="startBiz()"><div class="mi" style="background:#eaf3de">🏢</div><div style="flex:1"><div class="mt">Business Environment <span class="bdg bdg-t">ECO 8%</span></div><div class="ms">Benefits realization · governance · compliance · strategy</div></div><span style="font-size:13px;color:var(--text2)">→</span></div>
+  <div class="mc" onclick="startPractice()"><div class="mi" style="background:var(--green-light)">🌱</div><div style="flex:1"><div class="mt">Practice <span class="bdg bdg-p">Relaxed</span></div><div class="ms">10 Qs · no timer · explanations after every answer</div></div><span style="font-size:13px;color:var(--text2)">→</span></div>
+</div>
+<div class="persist-box"><div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:.125rem">Progress backup</div><div style="font-size:12px;color:var(--text2);margin-bottom:.625rem">Export your progress and import it on any device</div><div class="persist-row"><div class="persist-btn" onclick="exportProgress()">⬇ Export backup</div><div class="persist-btn" onclick="importProgress()">⬆ Import backup</div></div></div>`;
 }
 
-/* ── RENDER FUNCTIONS ── */
-function renderHome(){
-  const st=getSRStats(S.sr);
-  return `
-<div class="hero">
-  <div class="hero-icon">🦉</div>
-  <h1>PMP Quest</h1>
-  <p>Adaptive prep powered by spaced repetition</p>
-  <div class="hero-pills">
-    <span>🔥 ${S.streak} day streak</span>
-    <span>⭐ ${S.xp} XP</span>
+/* ── RENDER GLOSSARY ── */
+function renderGlossary(){
+  if(S.glossarySubscreen==='quiz')return renderGlossaryQuiz();
+  if(S.glossarySubscreen==='quiz_result')return renderGlossaryQuizResult();
+  const cats=['All',...[...new Set(GLOSSARY.map(g=>g.cat))]];
+  const filtered=S.glossaryFilter==='All'?GLOSSARY:GLOSSARY.filter(g=>g.cat===S.glossaryFilter);
+  const flippedCount=Object.values(S.glossaryFlipped).filter(v=>v).length;
+  return`<div><div style="font-size:16px;font-weight:500;color:var(--text);margin-bottom:.25rem">PMP Glossary</div>
+<div style="font-size:13px;color:var(--text2);margin-bottom:.875rem">${GLOSSARY.length} terms across all PMP domains</div>
+<div class="gloss-mode-tabs">
+  <div class="gloss-mode-tab ${S.glossarySubscreen!=='quiz'?'active':''}" onclick="S.glossarySubscreen='flip';render()">
+    <div class="gloss-mode-icon">🃏</div><div class="gloss-mode-title">Flip cards</div><div class="gloss-mode-sub">Tap to reveal definitions</div>
+  </div>
+  <div class="gloss-mode-tab" onclick="startGlossaryQuiz()">
+    <div class="gloss-mode-icon">❓</div><div class="gloss-mode-title">Quiz mode</div><div class="gloss-mode-sub">Match terms to definitions · +5 XP each</div>
   </div>
 </div>
-<div class="sr-overview">
-  <div class="sr-overview-title">Your progress</div>
-  <div class="sr-stat-row">
-    <div class="sr-stat"><div class="v">${st.seen}</div><div class="l">Seen</div></div>
-    <div class="sr-stat"><div class="v" style="color:#8549ba">${st.mastered}</div><div class="l">Mastered</div></div>
-    <div class="sr-stat"><div class="v" style="color:#e07000">${st.dueNow}</div><div class="l">Due now</div></div>
-  </div>
-</div>
-<div class="mode-list">
-  <div class="mc" onclick="startSR()">
-    <div class="mi" style="background:#faeeda">🧠</div>
-    <div style="flex:1">
-      <div class="mt">Smart review <span class="bdg bdg-a">Spaced rep</span></div>
-      <div class="ms">15 Qs · weak spots first · adapts to your memory</div>
-    </div>
-    <span style="font-size:13px;color:#aaa">${st.dueNow>0?st.dueNow+' due':st.seen===0?'Start':'Done'} →</span>
-  </div>
-  <div class="mc" onclick="startPrep()">
-    <div class="mi" style="background:#f0e6ff">📝</div>
-    <div style="flex:1">
-      <div class="mt">Prep exam <span class="bdg bdg-r">Hard</span></div>
-      <div class="ms">45 Qs · 60-min · fail if >14 wrong · domain radar</div>
-    </div>
-    <span style="font-size:13px;color:#aaa">→</span>
-  </div>
-  <div class="mc" onclick="startPractice()">
-    <div class="mi" style="background:#f0ffe6">🌱</div>
-    <div style="flex:1">
-      <div class="mt">Practice <span class="bdg bdg-p">Relaxed</span></div>
-      <div class="ms">10 Qs · no timer · explanations every answer</div>
-    </div>
-    <span style="font-size:13px;color:#aaa">→</span>
-  </div>
-</div>
-<div class="info-box">
-  <strong>Spaced repetition:</strong> questions you miss come back sooner.
-  Questions you master are shown less often. All ${ALL_Q.length} questions tracked individually.
+${S.glossarySubscreen==='flip'?`
+<div class="gloss-progress"><span style="font-size:13px;color:var(--text2)">${flippedCount} of ${filtered.length} flipped</span><span style="font-size:13px;font-weight:500;color:var(--purple)">${filtered.length>0?Math.round((flippedCount/filtered.length)*100):0}%</span></div>
+<div class="gloss-controls">${cats.map(c=>`<button class="gloss-filter${S.glossaryFilter===c?' active':''}" onclick="setGlossaryFilter('${c}')">${c}</button>`).join('')}</div>
+${filtered.map((g,i)=>`<div class="flip-card${S.glossaryFlipped[i]?' flipped':''}" onclick="flipCard(${i})"><div class="flip-inner"><div class="flip-front"><div class="flip-term">${g.term}</div><div class="flip-cat">${g.cat}</div><div class="flip-hint" style="margin-top:.5rem">Tap to reveal definition →</div></div><div class="flip-back"><div class="flip-def">${g.def}</div>${g.example?`<div class="flip-example">📋 ${g.example}</div>`:''}</div></div></div>`).join('')}
+`:''}
 </div>`;
 }
 
+function renderGlossaryQuiz(){
+  const q=S.glossaryQuiz[S.glossaryQuizCurrent];const total=S.glossaryQuiz.length;const pct=(S.glossaryQuizCurrent/total)*100;
+  const opts=q.opts.map((o,i)=>{let cls='gloss-quiz-opt';if(S.glossaryQuizAnswered){if(i===q.ans)cls+=' gcor';else if(i===S.glossaryQuizSelected&&i!==q.ans)cls+=' ginc';}else if(i===S.glossaryQuizSelected)cls+=' gsel';return`<button class="${cls}" onclick="selectGlossOpt(${i})" ${S.glossaryQuizAnswered?'disabled':''}>${o}</button>`;}).join('');
+  const fb=S.glossaryQuizAnswered?`<div class="fb ${S.glossaryQuizSelected===q.ans?'cor':'inc'}"><div class="fb-hd">${S.glossaryQuizSelected===q.ans?'✓ Correct!':'✗ Incorrect'}</div>${S.glossaryQuizSelected!==q.ans?`Correct: ${q.def}`:''}</div>`:'';
+  const lbl=S.glossaryQuizAnswered?(S.glossaryQuizCurrent<total-1?'Next →':'See results'):'Check';
+  return`<div><div class="hdr"><button onclick="S.glossarySubscreen='menu';render()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text2);padding:4px">✕</button><div style="flex:1;margin:0 10px"><div class="pbar-w" style="margin-bottom:0"><div class="pbar" style="width:${pct}%"></div></div></div><div class="pill">⭐ <span class="v">${S.stats.xp||0}</span></div></div>
+<div class="gloss-quiz-card"><div class="gloss-quiz-sub">${q.cat} · Q ${S.glossaryQuizCurrent+1} of ${total}</div><div style="font-size:11px;color:var(--text3);margin:.25rem 0 .625rem">Which definition matches this term?</div><div class="gloss-quiz-term">${q.term}</div></div>
+<div class="gloss-quiz-opts">${opts}</div>
+${fb}
+<button class="abtn pur" ${!S.glossaryQuizAnswered&&S.glossaryQuizSelected===null?'disabled':''} onclick="${S.glossaryQuizAnswered?'nextGlossQuestion()':'checkGlossAnswer()'}">
+  ${lbl}
+</button>
+</div>`;
+}
+
+function renderGlossaryQuizResult(){
+  const total=S.glossaryQuiz.length;const pct=Math.round((S.glossaryQuizCorrect/total)*100);
+  const icon=pct>=80?'🎓':pct>=60?'📖':'🔁';
+  return`<div class="result-screen"><div style="font-size:56px;margin-bottom:.625rem">${icon}</div><div style="font-size:22px;font-weight:500;color:${pct>=70?'var(--green-dark)':'#cc0000'};margin-bottom:.25rem">${pct>=80?'Glossary master!':pct>=60?'Getting there!':'Keep drilling!'}</div><div style="font-size:14px;color:var(--text2);margin-bottom:1.25rem">${S.glossaryQuizCorrect}/${total} terms matched correctly</div>
+<div class="srow"><div class="sc"><div class="sv">${S.glossaryQuizCorrect}</div><div class="sl">Correct</div></div><div class="sc"><div class="sv">${total-S.glossaryQuizCorrect}</div><div class="sl">Missed</div></div><div class="sc"><div class="sv">${pct}%</div><div class="sl">Score</div></div></div>
+<div class="btn-row"><button class="abtn pur" onclick="startGlossaryQuiz()">Play again</button><button class="abtn out" onclick="S.glossarySubscreen='flip';render()">Study flip cards</button><button class="abtn out" onclick="S.glossarySubscreen='menu';render()">Back to glossary</button></div></div>`;
+}
+
+/* ── RENDER FORMULAS ── */
+function renderFormulas(){
+  return`<div><div style="font-size:16px;font-weight:500;color:var(--text);margin-bottom:.25rem">PMP Formula sheet</div><div style="font-size:13px;color:var(--text2);margin-bottom:1rem">Tap any formula to expand with example and memory tip</div>
+${FORMULAS.map((cat,ci)=>`<div class="formula-cat"><div class="fcat-hd">${cat.cat}</div>${cat.items.map((item,ii)=>{const k=ci+'_'+ii;const isOpen=!!S.formulaOpen[k];return`<div class="formula-card${isOpen?' open':''}" onclick="toggleFormula('${ci}','${ii}')"><div class="fc-top"><div class="fc-name">${item.name}</div><span style="font-size:14px;color:var(--text3)">${isOpen?'▲':'▼'}</span></div><div class="fc-formula">${item.formula}</div>${isOpen?`<div class="fc-body"><div style="font-size:13px;color:var(--text2);line-height:1.55">${item.explain}</div><div class="fc-example">📋 ${item.example}</div><div class="fc-tip">💡 ${item.tip}</div></div>`:''}</div>`;}).join('')}</div>`).join('')}
+</div>`;
+}
+
+/* ── RENDER HISTORY ── */
+function renderHistory(){
+  if(!S.history.length)return`<div class="hist-empty">📊<br>No sessions yet.<br>Complete a quiz to see your history.</div>`;
+  const last5=S.history.slice(0,5);
+  const avgPct=Math.round(last5.reduce((s,h)=>s+h.pct,0)/last5.length);
+  const best=Math.max(...last5.map(h=>h.pct));
+  const trend=last5.length>=2?(last5[0].pct>=last5[last5.length-1].pct?'↑ Improving':'↓ Needs work'):'—';
+  const modeColor={prep:'#8549ba',sr:'#e07000',practice:'#58cc02',scenario:'#185fa5',due:'#e07000',people:'#1D9E75',biz:'#27500a'};
+  const modeLabel={prep:'Prep exam',sr:'Smart review',practice:'Practice',scenario:'Scenario',due:'Due now',people:'People',biz:'Biz Env'};
+  return`<div style="font-size:16px;font-weight:500;color:var(--text);margin-bottom:.875rem">Session history</div>
+<div class="trend-row"><div class="trend-card"><div class="tv">${S.history.length}</div><div class="tl">Sessions</div></div><div class="trend-card"><div class="tv">${avgPct}%</div><div class="tl">Avg score</div></div><div class="trend-card"><div class="tv">${best}%</div><div class="tl">Best</div></div><div class="trend-card"><div class="tv">${S.history.filter(h=>h.passed).length}</div><div class="tl">Passed</div></div><div class="trend-card"><div class="tv" style="font-size:12px">${trend}</div><div class="tl">Trend</div></div></div>
+${S.history.slice(0,15).map(h=>{
+  const ds=h.domainStats||{};
+  const bars=ECO_DOMAINS.map(d=>{const r=ds[d]||{correct:0,total:0};const p=r.total>0?Math.round((r.correct/r.total)*100):null;return p!==null?`<div style="display:grid;grid-template-columns:75px 1fr 28px;align-items:center;gap:6px;font-size:11px"><div style="color:var(--text2);text-align:right">${d.split(' ')[0]}</div><div style="background:var(--bg2);border-radius:99px;height:7px;overflow:hidden"><div style="height:7px;border-radius:99px;width:${p}%;background:${DOMAIN_COLORS[d]}"></div></div><div style="font-size:10px;font-weight:500;color:var(--text)">${p}%</div></div>`:''}).join('');
+  return`<div class="hist-item"><div class="hist-top"><span style="font-size:11px;font-weight:500;border-radius:99px;padding:2px 9px;background:${modeColor[h.mode]||'#888'}22;color:${modeColor[h.mode]||'#888'}">${modeLabel[h.mode]||h.mode}</span><span style="font-size:11px;color:var(--text3)">${h.date}</span></div><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:.5rem"><div style="font-size:22px;font-weight:500;color:${h.passed?'var(--green-dark)':'var(--red-dark)'}">${h.pct}%</div><div style="font-size:12px;color:var(--text2)">${h.correct}/${h.total} · ${h.wrong} wrong · ${h.elapsed}</div></div><div style="display:grid;gap:4px">${bars}</div></div>`;
+}).join('')}`;
+}
+
+/* ── RENDER ACHIEVEMENTS ── */
+function renderAchievements(){
+  const earned=S.stats.earnedAchievements||[];
+  function hint(a){const st=S.stats;
+    const map={streak3:`${st.streak||0}/3`,streak7:`${st.streak||0}/7`,mastered10:`${st.mastered||0}/10`,mastered30:`${st.mastered||0}/30`,scenario10:`${st.scenarioCorrect||0}/10`,people5:`${st.peopleCorrect||0}/5`,biz5:`${st.bizCorrect||0}/5`,glossary_quiz10:`${st.glossaryQuizCorrect||0}/10`,glossary_flip10:`${st.glossaryFlipped||0}/10`,glossary_all:`${st.glossaryFlipped||0}/${GLOSSARY.length}`,bookmarks5:`${st.bookmarkCount||0}/5`,xp500:`${st.xp||0}/500 XP`,xp2000:`${st.xp||0}/2000 XP`,sessions10:`${st.totalSessions||0}/10`,pass_prep3:`${st.prepPassed||0}/3`};
+    return map[a.id]||'';
+  }
+  return`<div style="font-size:16px;font-weight:500;color:var(--text);margin-bottom:.25rem">Achievements</div>
+<div style="font-size:13px;color:var(--text2);margin-bottom:.75rem">${earned.length} of ${ACHIEVEMENTS.length} unlocked</div>
+<div style="background:var(--bg2);border-radius:var(--radius-sm);height:8px;overflow:hidden;margin-bottom:1rem"><div style="height:8px;border-radius:99px;background:#ffd900;width:${Math.round((earned.length/ACHIEVEMENTS.length)*100)}%;transition:width .7s ease"></div></div>
+<div class="ach-grid">${ACHIEVEMENTS.map(a=>{const isE=earned.includes(a.id);return`<div class="ach-card ${isE?'earned':'locked'}"><div class="ach-icon">${isE?a.icon:'🔒'}</div><div class="ach-name">${isE?a.name:'???'}</div><div class="ach-desc">${isE?a.desc:'Keep studying to unlock'}</div>${isE?'<div class="ach-earned-tag">Earned ✓</div>':`<div class="ach-progress">${hint(a)}</div>`}</div>`;}).join('')}</div>`;
+}
+
+/* ── RENDER BOOKMARKS ── */
+function renderBookmarks(){
+  if(!S.bookmarks.length)return`<div class="hist-empty">🔖<br>No bookmarks yet.<br>Flag questions during a quiz to save them here.</div>`;
+  return`<div style="font-size:16px;font-weight:500;color:var(--text);margin-bottom:.875rem">${S.bookmarks.length} saved question${S.bookmarks.length>1?'s':''}</div>
+${S.bookmarks.map(b=>`<div class="bm-item"><div class="bm-q">${b.q}</div><div class="bm-meta"><span class="qtag" style="font-size:10px">${b.domain} · ${b.tag}</span><span class="bm-ans">✓ ${b.ans}</span><button class="bm-remove" onclick="removeBookmark(${b.id})">remove</button></div><div style="font-size:12px;color:var(--text2);margin-top:.375rem;line-height:1.5">${b.exp}</div></div>`).join('')}`;
+}
+
+/* ── RENDER QUIZ ── */
 function renderQuiz(){
-  const q=S.questions[S.current];
-  const total=S.questions.length;
-  const pct=(S.current/total)*100;
-  const ltrs=['A','B','C','D'];
-  const isPrep=S.mode==='prep';
+  const q=S.questions[S.current];const total=S.questions.length;const pct=(S.current/total)*100;
+  const ltrs=['A','B','C','D'];const isPrep=S.mode==='prep';
   const tc=S.timerSec<300?'tmr dng':S.timerSec<600?'tmr warn':'tmr';
-
-  const opts=q.opts.map((o,i)=>{
-    let c='opt';
-    if(S.answered){if(i===q.ans)c+=' cor';else if(i===S.selected&&i!==q.ans)c+=' inc';}
-    else if(i===S.selected) c+=' sel';
-    return `<button class="${c}" onclick="selectOpt(${i})" ${S.answered?'disabled':''}><span class="oltr">${ltrs[i]}</span><span style="line-height:1.45;flex:1">${o}</span></button>`;
-  }).join('');
-
+  const bm=isBookmarked(q.id);
+  const opts=q.opts.map((o,i)=>{let c='opt';if(S.answered){if(i===q.ans)c+=' cor';else if(i===S.selected&&i!==q.ans)c+=' inc';}else if(i===S.selected)c+=' sel';return`<button class="${c}" onclick="selectOpt(${i})" ${S.answered?'disabled':''}><span class="oltr">${ltrs[i]}</span><span style="line-height:1.45;flex:1">${o}</span></button>`;}).join('');
+  const scenarioBox=q.type==='scenario'&&q.scenario?`<div class="scenario-box">${q.scenario}</div>`:'';
+  const ecoTag=getEcoTag(q);const srTag=(S.mode==='sr'||S.mode==='due')?getSRLabel(q.id):'';
   const fb=S.answered?`<div class="fb ${S.selected===q.ans?'cor':'inc'}"><div class="fb-hd">${S.selected===q.ans?'✓ Correct!':'✗ Incorrect'}</div>${q.exp}</div>`:'';
-  const dots=isPrep?`<div class="ebar"><span style="font-size:12px;font-weight:600">Errors: ${S.wrong}/${MAX_WRONG}</span><div class="dots">${Array.from({length:MAX_WRONG+1},(_,i)=>`<div class="dot${i<S.wrong?' w':''}"></div>`).join('')}</div></div>`:'';
-  const srTag=S.mode==='sr'?getSRLabel(q.id):'';
+  const dots=isPrep?`<div class="ebar"><span style="font-size:12px;font-weight:500">Errors: ${S.wrong}/${MAX_WRONG}</span><div class="dots">${Array.from({length:MAX_WRONG+1},(_,i)=>`<div class="dot${i<S.wrong?' w':''}"></div>`).join('')}</div></div>`:'';
   const btnLabel=S.answered?(S.current<total-1?'Next →':'See results'):'Check answer';
-
-  return `
-<div class="hdr">
-  <button onclick="goHome()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text2);padding:4px 6px;line-height:1">✕</button>
-  <div style="flex:1;margin:0 10px"><div class="pbar-w" style="margin-bottom:0"><div class="pbar" style="width:${pct}%"></div></div></div>
-  ${isPrep?`<div class="${tc}">⏱ ${fmt(S.timerSec)}</div>`:`<div class="pill">⭐ <span class="v">${S.xp}</span></div>`}
-</div>
+  return`<div class="hdr"><button onclick="goHome()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text2);padding:4px">✕</button><div style="flex:1;margin:0 10px"><div class="pbar-w" style="margin-bottom:0"><div class="pbar" style="width:${pct}%"></div></div></div>${isPrep?`<div class="${tc}">⏱ ${fmt(S.timerSec)}</div>`:`<div class="pill">⭐ <span class="v">${S.stats.xp||0}</span></div>`}<button class="flag-btn" onclick="toggleBookmark()">${bm?'🔖':'🏳️'}</button></div>
 ${dots}
-<div class="card">
-  <div><span class="qtag">${q.domain} · ${q.tag}</span>${srTag}</div>
-  <div style="font-size:12px;color:var(--text3);margin-bottom:8px">Q ${S.current+1} of ${total}</div>
-  <div class="qtext">${q.q}</div>
-</div>
+<div class="card"><div style="margin-bottom:4px"><span class="qtag">${q.tag}</span>${ecoTag}${srTag}</div><div style="font-size:11px;color:var(--text3);margin-bottom:8px">Q ${S.current+1} of ${total}</div>${scenarioBox}<div class="qtext">${q.q}</div></div>
 <div class="opts">${opts}</div>
 ${fb}
-<button class="abtn pur" ${!S.answered&&S.selected===null?'disabled':''} onclick="${S.answered?'next()':'check()'}">
-  ${btnLabel}
-</button>`;
+<button class="abtn pur" ${!S.answered&&S.selected===null?'disabled':''} onclick="${S.answered?'next()':'check()'}">${btnLabel}</button>`;
 }
 
-function renderResult(){
-  const total=S.questions.length;
-  const pct=Math.round((S.correct/total)*100);
-  const isPrep=S.mode==='prep';
-  const isSR=S.mode==='sr';
-  const elapsed=Math.round((Date.now()-S.startTime)/1000);
-  const timeUsed=isPrep?fmt(EXAM_MIN*60-S.timerSec):fmt(elapsed);
-  const passed=isPrep?!S.failed:pct>=70;
-
-  let icon,title,sub;
-  if(S.failReason==='timeout'){icon='⏰';title='Time\'s up!';sub='You ran out of time. Work on speed.';}
-  else if(S.failReason==='wrong'){icon='❌';title='Exam failed';sub=`Exceeded ${MAX_WRONG} wrong answers. Review below and retry.`;}
-  else if(isPrep&&passed){icon=pct>=85?'🏆':'✅';title='Exam passed!';sub=`${S.correct}/${total} correct, ${S.wrong} errors.`;}
-  else if(isSR){icon='🧠';title='Review done!';sub='Cards updated. Come back tomorrow for the next batch.';}
-  else{icon=pct>=70?'🎉':'📖';title=pct>=70?'Nice work!':'Keep going!';sub=pct>=70?'Good understanding — keep building.':'Review explanations and practice more.';}
-
+/* ── RENDER FAIL ── */
+function renderFail(){
+  const total=S.questions.length;const pct=Math.round((S.correct/total)*100);
+  const isTimeout=S.failReason==='timeout';
   const ds=S.domainStats;
-  const domainBars=DOMAINS.map(d=>{
-    const r=ds[d]||{correct:0,total:0};
-    const p=r.total>0?Math.round((r.correct/r.total)*100):0;
-    return `<div class="db-row">
-      <div class="db-label">${d}</div>
-      <div class="db-track"><div class="db-fill" style="width:${p}%;background:${DOMAIN_COLORS[d]}"></div></div>
-      <div class="db-pct">${p}%</div>
-    </div>`;
-  }).join('');
-
-  const review=S.wrongItems.length>0?`
-<div class="rev-section">
-  <div class="rev-hd">Review: ${S.wrongItems.length} incorrect</div>
-  ${S.wrongItems.map(it=>`<div class="rev-item">
-    <div class="rq">${it.q}</div>
-    <div class="ry">✗ ${it.yourAns}</div>
-    <div class="ra">✓ ${it.correct}</div>
-    <div class="rexp">${it.exp}</div>
-  </div>`).join('')}
-</div>`:`<div style="text-align:center;padding:.75rem;color:var(--green-dark);font-size:14px;margin-bottom:1rem">🎯 No incorrect answers!</div>`;
-
-  setTimeout(()=>drawRadar(ds),200);
-
-  return `
-<div class="result-screen">
-  <div class="ri">${icon}</div>
-  <div class="rt" style="color:${passed?'#2d6e00':'#cc0000'}">${title}</div>
-  <div class="rs">${sub}</div>
-  <div class="srow">
-    <div class="sc"><div class="sv">${S.correct}/${total}</div><div class="sl">Correct</div></div>
-    <div class="sc"><div class="sv" style="color:${S.wrong>MAX_WRONG?'#cc0000':'var(--text)'}">${S.wrong}</div><div class="sl">Wrong${isPrep?' (max '+MAX_WRONG+')':''}</div></div>
-    <div class="sc"><div class="sv">${timeUsed}</div><div class="sl">Time</div></div>
-  </div>
-  <div class="radar-wrap">
-    <div class="radar-title">Domain performance</div>
-    <div class="radar-chart-wrap"><canvas id="domainChart"></canvas></div>
-    <div class="domain-bars" style="margin-top:10px">${domainBars}</div>
-  </div>
+  const bars=ECO_DOMAINS.map(d=>{const r=ds[d]||{correct:0,total:0};const p=r.total>0?Math.round((r.correct/r.total)*100):0;return`<div class="db-row"><div class="db-label">${d.split(' ')[0]}</div><div class="db-track"><div class="db-fill" style="width:${p}%;background:${DOMAIN_COLORS[d]}"></div></div><div class="db-pct">${p}%</div></div>`;}).join('');
+  const review=S.wrongItems.length>0?`<div class="rev-section" style="text-align:left"><div class="rev-hd">Your ${S.wrongItems.length} incorrect answers</div>${S.wrongItems.slice(0,6).map(it=>`<div class="rev-item"><div class="rq">${it.q}</div><div class="ry">✗ ${it.yourAns}</div><div class="ra">✓ ${it.correct}</div><div class="rexp">${it.exp}</div></div>`).join('')}${S.wrongItems.length>6?`<div style="font-size:12px;color:var(--text3);text-align:center;padding:.5rem">+${S.wrongItems.length-6} more — focus on these areas</div>`:''}</div>`:'';
+  setTimeout(()=>drawRadar(ds),300);
+  return`<div class="fail-screen">
+<div><span class="fail-icon">😵</span><div class="fail-shake" style="display:none"></div></div>
+<div class="fail-title">${isTimeout?'⏰ Time\'s up!':'❌ Exam failed'}</div>
+<div class="fail-sub">${isTimeout?'You ran out of time. Aim to spend ~1.3 minutes per question.':'You exceeded '+MAX_WRONG+' wrong answers ('+S.wrong+' wrong). Study your weak areas and try again.'}</div>
+<div class="fail-stats">
+  <div class="srow"><div class="sc"><div class="sv">${S.correct}/${total}</div><div class="sl">Correct</div></div><div class="sc"><div class="sv" style="color:var(--red-dark)">${S.wrong}</div><div class="sl">Wrong (max ${MAX_WRONG})</div></div><div class="sc"><div class="sv">${pct}%</div><div class="sl">Score</div></div></div>
+  <div class="radar-wrap" style="text-align:left;margin-bottom:1rem"><div class="radar-title">Domain performance — find your weak spots</div><div class="radar-chart-wrap"><canvas id="domainChart"></canvas></div><div class="domain-bars" style="margin-top:10px">${bars}</div></div>
   ${review}
+</div>
+<div class="fail-actions">
   <div class="btn-row">
-    ${isPrep?`<button class="abtn ${passed?'grn':'red'}" onclick="startPrep()">${passed?'Take another exam':'Retry exam'}</button>`:''}
-    ${isSR?`<button class="abtn pur" onclick="startSR()">Another round</button>`:''}
+    <button class="abtn red" onclick="startPrep()">Try again 💪</button>
+    <button class="abtn pur" onclick="startSR()">Smart review first 🧠</button>
     <button class="abtn out" onclick="goHome()">Back to home</button>
   </div>
+</div>
 </div>`;
 }
 
-function render(){
-  const app=document.getElementById('app');
-  if(S.screen==='home') app.innerHTML=renderHome();
-  else if(S.screen==='quiz') app.innerHTML=renderQuiz();
-  else app.innerHTML=renderResult();
-  if(S.screen==='result') setTimeout(()=>drawRadar(S.domainStats),200);
+/* ── RENDER RESULT ── */
+function renderResult(){
+  const total=S.questions.length;const pct=Math.round((S.correct/total)*100);
+  const isPrep=S.mode==='prep';
+  if(isPrep&&S.failed)return renderFail();
+  const elapsed=isFinite(S.startTime)?Math.round((Date.now()-S.startTime)/1000):0;
+  const timeUsed=isPrep?fmt(EXAM_MIN*60-S.timerSec):fmt(elapsed);
+  const passed=isPrep?!S.failed:pct>=70;
+  let icon,title,sub;
+  if(isPrep&&passed){icon=pct>=85?'🏆':'✅';title='Exam passed! 🎉';sub=`${S.correct}/${total} correct, ${S.wrong} errors. Nicely done!`;}
+  else if(S.mode==='due'){icon='⏰';title='Due cards cleared!';sub='Memory updated. Come back tomorrow for more.';}
+  else if(S.mode==='sr'){icon='🧠';title='Review done!';sub='Cards updated. Come back tomorrow for the next batch.';}
+  else if(S.mode==='scenario'){icon=pct>=70?'🎭':'📖';title=pct>=70?'Strong situational thinking!':'Keep practicing scenarios';sub=`${S.correct}/${total} scenario questions correct.`;}
+  else if(S.mode==='people'){icon=pct>=70?'🤝':'📖';title=pct>=70?'People skills on point!':'Review leadership & motivation';sub=`${S.correct}/${total} People domain correct.`;}
+  else if(S.mode==='biz'){icon=pct>=70?'🏢':'📖';title=pct>=70?'Business savvy!':'Review governance & benefits';sub=`${S.correct}/${total} Business Env correct.`;}
+  else{icon=pct>=70?'🎉':'📖';title=pct>=70?'Nice work!':'Keep going!';sub=pct>=70?'Good understanding — keep building.':'Review the explanations and practice more.';}
+  const ds=S.domainStats;
+  const bars=ECO_DOMAINS.map(d=>{const r=ds[d]||{correct:0,total:0};const p=r.total>0?Math.round((r.correct/r.total)*100):0;return`<div class="db-row"><div class="db-label">${d.split(' ')[0]}</div><div class="db-track"><div class="db-fill" style="width:${p}%;background:${DOMAIN_COLORS[d]}"></div></div><div class="db-pct">${p}%</div></div>`;}).join('');
+  const review=S.wrongItems.length>0?`<div class="rev-section"><div class="rev-hd">Review: ${S.wrongItems.length} incorrect answer${S.wrongItems.length>1?'s':''}</div>${S.wrongItems.map(it=>`<div class="rev-item"><div class="rq">${it.q}</div><div class="ry">✗ ${it.yourAns}</div><div class="ra">✓ ${it.correct}</div><div class="rexp">${it.exp}</div></div>`).join('')}</div>`:`<div style="text-align:center;padding:.75rem;color:var(--green-dark);font-size:14px;margin-bottom:1rem">🎯 No incorrect answers — perfect!</div>`;
+  const st=getSRStats(S.sr);
+  setTimeout(()=>drawRadar(ds),150);
+  return`<div class="result-screen">
+<div style="font-size:56px;margin-bottom:.625rem">${icon}</div>
+<div style="font-size:22px;font-weight:500;color:${passed?'var(--green-dark)':'var(--amber)'};margin-bottom:.25rem">${title}</div>
+<div style="font-size:14px;color:var(--text2);margin-bottom:1.125rem;line-height:1.5">${sub}</div>
+<div class="srow"><div class="sc"><div class="sv">${S.correct}/${total}</div><div class="sl">Correct</div></div><div class="sc"><div class="sv">${S.wrong}</div><div class="sl">Wrong</div></div><div class="sc"><div class="sv">${timeUsed}</div><div class="sl">Time</div></div></div>
+<div class="radar-wrap"><div class="radar-title">ECO domain performance</div><div class="radar-chart-wrap"><canvas id="domainChart"></canvas></div><div class="domain-bars" style="margin-top:10px">${bars}</div></div>
+${review}
+<div class="btn-row">
+  ${st.dueNow>0?`<button class="abtn amb" onclick="startDueNow()">Clear ${st.dueNow} due card${st.dueNow>1?'s':''} ⏰</button>`:''}
+  ${isPrep?`<button class="abtn grn" onclick="startPrep()">New exam</button>`:''}
+  ${S.mode==='scenario'?`<button class="abtn blue" onclick="startScenario()">More scenarios</button>`:''}
+  ${S.mode==='people'?`<button class="abtn teal" onclick="startPeople()">More People Qs</button>`:''}
+  ${S.mode==='biz'?`<button class="abtn teal" onclick="startBiz()">More Biz Env Qs</button>`:''}
+  ${(S.mode==='sr'||S.mode==='due')?`<button class="abtn pur" onclick="startSR()">Smart review</button>`:''}
+  <button class="abtn out" onclick="goHome()">Back to home</button>
+</div></div>`;
 }
 
+/* ── MAIN RENDER ── */
+function render(){
+  const app=document.getElementById('app');
+  if(S.screen==='quiz'){app.innerHTML=renderQuiz();return;}
+  if(S.screen==='formulas'){app.innerHTML=renderFormulas();return;}
+  if(S.screen==='glossary'){app.innerHTML=renderGlossary();return;}
+  if(S.screen==='history'){app.innerHTML=renderHistory();return;}
+  if(S.screen==='achievements'){app.innerHTML=renderAchievements();return;}
+  if(S.screen==='bookmarks'){app.innerHTML=renderBookmarks();return;}
+  if(S.screen==='result'){app.innerHTML=renderResult();setTimeout(()=>drawRadar(S.domainStats),200);return;}
+  app.innerHTML=renderHome();
+}
+
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}
 render();
-</script>
-<script>
-  if('serviceWorker' in navigator){
-    window.addEventListener('load', ()=>{
-      navigator.serviceWorker.register('sw.js').catch(()=>{});
-    });
-  }
 </script>
 </body>
 </html>
